@@ -3683,6 +3683,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   work: 0
   maxWork: 100
+  workPunishment: 10
   workGainPerSecondPerWorkingItem: 1
   workLossPerSecondPerBrokenItem: 3
   bossMinWorkThreshold: 20

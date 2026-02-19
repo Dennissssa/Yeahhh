@@ -13,6 +13,7 @@ public class GameManager : MonoBehaviour
     [Header("Work Value")]
     public float work = 0f;
     public float maxWork = 100f; // 顶峰值：到这个值不再加，但可以减
+    public float workPunishment;
     public float workGainPerSecondPerWorkingItem = 1f;
     public float workLossPerSecondPerBrokenItem = 3f;
     public float bossMinWorkThreshold = 20f; // 上司检查时 work 必须 >= 这个值，否则输
@@ -116,6 +117,11 @@ public class GameManager : MonoBehaviour
             if (BossWarning) ui.SetBossCountdown(BossWarningTimeLeft);
             else ui.HideBossCountdown();
         }
+    }
+
+    public void Punishment()
+    {
+        work = work - 10;
     }
 
     IEnumerator BossLoop()

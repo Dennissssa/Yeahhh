@@ -130,7 +130,10 @@ public class WorkItem : MonoBehaviour
 
     private void OnRepairPerformed(InputAction.CallbackContext ctx)
     {
-        if (!IsBroken) return;
+        if (!IsBroken)
+        {
+            GameManager.Instance.Punishment();
+        }
 
         if (requirePlayerInRange)
         {
