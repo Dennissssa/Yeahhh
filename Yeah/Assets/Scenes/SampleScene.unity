@@ -755,7 +755,11 @@ MonoBehaviour:
   interactRange: 2
   player: {fileID: 0}
   brokenColor: {r: 1, g: 0.2, b: 0.2, a: 1}
+  baitColor: {r: 0.2, g: 1, b: 0.2, a: 1}
   OnBroken:
+    m_PersistentCalls:
+      m_Calls: []
+  OnBaiting:
     m_PersistentCalls:
       m_Calls: []
   OnFixed:
@@ -1491,7 +1495,11 @@ MonoBehaviour:
   interactRange: 2
   player: {fileID: 0}
   brokenColor: {r: 1, g: 0.25, b: 0.25, a: 1}
+  baitColor: {r: 0.2, g: 1, b: 0.2, a: 1}
   OnBroken:
+    m_PersistentCalls:
+      m_Calls: []
+  OnBaiting:
     m_PersistentCalls:
       m_Calls: []
   OnFixed:
@@ -1804,7 +1812,11 @@ MonoBehaviour:
   interactRange: 2
   player: {fileID: 0}
   brokenColor: {r: 1, g: 0.3, b: 0.3, a: 1}
+  baitColor: {r: 0.2, g: 1, b: 0.2, a: 1}
   OnBroken:
+    m_PersistentCalls:
+      m_Calls: []
+  OnBaiting:
     m_PersistentCalls:
       m_Calls: []
   OnFixed:
@@ -3102,7 +3114,11 @@ MonoBehaviour:
   interactRange: 2
   player: {fileID: 0}
   brokenColor: {r: 1, g: 0.3, b: 0.3, a: 1}
+  baitColor: {r: 0.2, g: 1, b: 0.2, a: 1}
   OnBroken:
+    m_PersistentCalls:
+      m_Calls: []
+  OnBaiting:
     m_PersistentCalls:
       m_Calls: []
   OnFixed:
@@ -3878,7 +3894,11 @@ MonoBehaviour:
   interactRange: 2
   player: {fileID: 0}
   brokenColor: {r: 1, g: 0.2, b: 0.2, a: 1}
+  baitColor: {r: 0.2, g: 1, b: 0.2, a: 1}
   OnBroken:
+    m_PersistentCalls:
+      m_Calls: []
+  OnBaiting:
     m_PersistentCalls:
       m_Calls: []
   OnFixed:
@@ -5246,6 +5266,7 @@ MonoBehaviour:
   work: 0
   maxWork: 100
   workPunishment: 5
+  workUltraPunishment: 10
   workGainPerSecondPerWorkingItem: 1
   workLossPerSecondPerBrokenItem: 2
   bossMinWorkThreshold: 20
