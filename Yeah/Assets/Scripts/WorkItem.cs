@@ -21,10 +21,13 @@ public class WorkItem : MonoBehaviour
 
     [Header("Colors")]
     public Color brokenColor = new Color(1f, 0.2f, 0.2f, 1f);
+    public Color baitColor = new Color(0.2f, 1f, 0.2f, 1f);
 
     [Header("Uduino / 外部输出（可选）")]
     [Tooltip("故障发生时触发，可连到 Uduino 输出等")]
     public UnityEvent OnBroken;
+    [Tooltip("I'm scared")] 
+    public UnityEvent OnBaiting;
     [Tooltip("修好时触发，可连到 Uduino 输出等")]
     public UnityEvent OnFixed;
 
@@ -34,6 +37,7 @@ public class WorkItem : MonoBehaviour
     public string debugBreakBindingPath = "<Keyboard>/b"; // 新Input：按B强制故障（排查用）
 
     public bool IsBroken { get; private set; } = false;
+    public bool IsBaiting {get; private set;} = false;
 
     private Renderer[] allRenderers;
     private MaterialPropertyBlock mpb;
@@ -98,6 +102,7 @@ public class WorkItem : MonoBehaviour
             GameManager.Instance.RegisterItem(this);
 
         ClearTintOverride();
+        //StartCoroutine(BaitLoop());
         StartCoroutine(BreakLoop());
 
         if (debugLogs)
@@ -113,11 +118,28 @@ public class WorkItem : MonoBehaviour
         debugBreakAction?.Dispose();
     }
 
+    /*private IEnumerator BaitLoop()
+    {
+        while (true)
+        {
+            if (!IsBaiting)
+            {
+                float t = Random.Range(minTimeToBreak, maxTimeToBreak);
+                yield return new WaitForSeconds(t);
+                
+                if (GameManager.FreezeFailures)
+                    continue;
+                
+                Bait();
+            }
+        }
+    }*/
+    
     private IEnumerator BreakLoop()
     {
         while (true)
         {
-            if (!IsBroken)
+            if (!IsBroken || !IsBaiting)
             {
                 float t = Random.Range(minTimeToBreak, maxTimeToBreak);
                 yield return new WaitForSeconds(t);
@@ -125,8 +147,15 @@ public class WorkItem : MonoBehaviour
                 // ✅ Boss预警开始到Boss离开期间：不产生新故障
                 if (GameManager.FreezeFailures)
                     continue;
-
-                Break();
+                int baitOrBreak = Random.Range(0, 6);
+                if (baitOrBreak < 5)
+                {
+                    Break();
+                }
+                else
+                {
+                    Bait();   
+                }
             }
             else
             {
@@ -139,8 +168,16 @@ public class WorkItem : MonoBehaviour
     {
         if (!IsBroken)
         {
-            GameManager.Instance.Punishment();
+            if (IsBaiting)
+            {
+                GameManager.Instance.UltraPunishment();
+            }
+            else
+            {
+                GameManager.Instance.Punishment();
+            }
         }
+        
 
         if (requirePlayerInRange)
         {
@@ -169,10 +206,38 @@ public class WorkItem : MonoBehaviour
             Debug.Log($"[WorkItem] {name} BROKE -> tint applied");
     }
 
+    public void Bait()
+    {
+        if (IsBaiting) return;
+        IsBaiting = true;
+        
+        ApplyTintOverride(baitColor);
+        OnBaiting?.Invoke();
+        
+        if (debugLogs)
+            Debug.Log($"[WorkItem] {name} BAIT -> tint applied");
+        StartCoroutine(BaitSelfFix());
+    }
+
+    IEnumerator BaitSelfFix()
+    {
+        yield return new WaitForSeconds(3);
+        if (IsBaiting)
+            IsBaiting = false;
+        ClearTintOverride();
+        Fix();
+    }
+
     public void Fix()
     {
         if (!IsBroken) return;
         IsBroken = false;
+        if (IsBaiting)
+        { 
+            IsBaiting = false;
+        }
+
+        
 
         ClearTintOverride();
         OnFixed?.Invoke();
