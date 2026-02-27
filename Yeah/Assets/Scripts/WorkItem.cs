@@ -55,6 +55,9 @@ public class WorkItem : MonoBehaviour
     private InputAction repairAction;
     private InputAction debugBreakAction;
 
+    //this doesn't really have a point but it's fun lol
+    public GameObject smokeParticles;
+
     private static readonly int[] ColorPropIds =
     {
         Shader.PropertyToID("_BaseColor"),

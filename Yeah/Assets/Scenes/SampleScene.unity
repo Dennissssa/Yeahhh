@@ -773,6 +773,7 @@ MonoBehaviour:
   debugLogs: 0
   debugBreakKeyOldInput: 0
   debugBreakBindingPath: <Keyboard>/b
+  smokeParticles: {fileID: 7834365151588663595, guid: 480f836bc1737703b9502808639383b4, type: 3}
 --- !u!65 &206531937
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1518,6 +1519,7 @@ MonoBehaviour:
   debugLogs: 0
   debugBreakKeyOldInput: 0
   debugBreakBindingPath: <Keyboard>/b
+  smokeParticles: {fileID: 7834365151588663595, guid: 480f836bc1737703b9502808639383b4, type: 3}
 --- !u!65 &363469230
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1816,6 +1818,7 @@ MonoBehaviour:
   debugLogs: 0
   debugBreakKeyOldInput: 0
   debugBreakBindingPath: <Keyboard>/b
+  smokeParticles: {fileID: 7834365151588663595, guid: 480f836bc1737703b9502808639383b4, type: 3}
 --- !u!65 &528905811
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3098,6 +3101,7 @@ MonoBehaviour:
   debugLogs: 0
   debugBreakKeyOldInput: 0
   debugBreakBindingPath: <Keyboard>/b
+  smokeParticles: {fileID: 7834365151588663595, guid: 480f836bc1737703b9502808639383b4, type: 3}
 --- !u!65 &983266345
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3824,6 +3828,7 @@ MonoBehaviour:
   debugLogs: 0
   debugBreakKeyOldInput: 0
   debugBreakBindingPath: <Keyboard>/b
+  smokeParticles: {fileID: 7834365151588663595, guid: 480f836bc1737703b9502808639383b4, type: 3}
 --- !u!65 &1141977273
 BoxCollider:
   m_ObjectHideFlags: 0
