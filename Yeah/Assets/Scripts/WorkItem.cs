@@ -248,6 +248,7 @@ public class WorkItem : MonoBehaviour
     /// <summary>尝试修好（按键或 Uduino 触发）。可从 Inspector 中 UduinoPinToKeyTrigger 的 onTriggered 或「直接修好目标」调用。</summary>
     public void TryRepair()
     {
+        Debug.Log($"I am trying to fix {this.itemName}"!);
         if (!IsBroken)
         {
             if (IsBaiting && GameManager.Instance != null)

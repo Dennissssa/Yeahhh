@@ -47,7 +47,7 @@ public class GameManager : MonoBehaviour
 
     public GameObject warningText;
 
-    private readonly List<WorkItem> items = new List<WorkItem>();
+    public List<WorkItem> items = new List<WorkItem>();
 
     public List<TextMeshProUGUI> anomalyTexts = new List<TextMeshProUGUI>();
 
@@ -105,6 +105,7 @@ public class GameManager : MonoBehaviour
             
             if (items[i].IsBroken)
             {
+                //Debug.Log($"{items[i].itemName} is broken! you should repair it by hitting {anomalyTexts[i].text}.");
                 broken++;
                 anomalyTexts[i].enabled = true;
             }
