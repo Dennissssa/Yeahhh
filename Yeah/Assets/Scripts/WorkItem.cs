@@ -60,6 +60,7 @@ public class WorkItem : MonoBehaviour
     //this doesn't really have a point but it's fun lol
     public GameObject smokeParticles;
 
+    public string itemName;
     private static readonly int[] ColorPropIds =
     {
         Shader.PropertyToID("_BaseColor"),

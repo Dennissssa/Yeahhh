@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -44,7 +45,11 @@ public class GameManager : MonoBehaviour
     [Header("Optional")]
     public bool autoFindItemsOnStart = true;
 
+    public GameObject warningText;
+
     private readonly List<WorkItem> items = new List<WorkItem>();
+
+    public List<TextMeshProUGUI> anomalyTexts = new List<TextMeshProUGUI>();
 
     private float surviveTime = 0f;
     private bool isGameOver = false;
@@ -97,8 +102,26 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < items.Count; i++)
         {
             if (items[i] == null) continue;
-            if (items[i].IsBroken) broken++;
-            else working++;
+            
+            if (items[i].IsBroken)
+            {
+                broken++;
+                anomalyTexts[i].enabled = true;
+            }
+            else
+            {
+                working++;
+                anomalyTexts[i].enabled = false;
+            }
+        }
+
+        if (broken > 0)
+        {
+            warningText.SetActive(true);
+        }
+        else
+        {
+            warningText.SetActive(false);
         }
 
         // 增加：不超过 maxWork
