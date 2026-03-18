@@ -1,13 +1,15 @@
 using NUnit.Framework;
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.Serialization;
 
 public class AudioManager : MonoBehaviour
 {
     //Audio player components
     public AudioSource EffectsSource;
     public AudioSource MusicSource;
-
+    
+    public List<AudioSource> EffectsSourceList = new List<AudioSource>();
     public List<AudioClip> EffectsList = new List<AudioClip>();
     public List<AudioClip> MusicList = new List<AudioClip>();
 
@@ -47,16 +49,11 @@ public class AudioManager : MonoBehaviour
 
     public void PlaySound(int Index)
     {
-        EffectsSource.clip = EffectsList[Index];
-        //if (EffectsSource.isPlaying &&
-        //    EffectsSource.clip.name == EffectsList[Index].name &&
-        //    EffectsSource.time < soundBuffer)
-        //{
-        //    return;
-        //}
-        //else
         {
-            EffectsSource.Play();
+            EffectsSourceList[Index].clip = EffectsList[Index];
+            {
+                EffectsSourceList[Index].Play();
+            }
         }
     }
 
@@ -68,7 +65,7 @@ public class AudioManager : MonoBehaviour
         }
 
         MusicSource.clip = MusicList[Index];
-        MusicSource.Play();
+        MusicSource.PlayOneShot(MusicSource.clip);
     }
 
     //public void PlayRandom(AudioClip clip)

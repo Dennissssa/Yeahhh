@@ -60,6 +60,9 @@ public class WorkItem : MonoBehaviour
     //this doesn't really have a point but it's fun lol
     public GameObject smokeParticles;
 
+    public int breakInt;
+    public int baitInt;
+
     public string itemName;
     private static readonly int[] ColorPropIds =
     {
@@ -227,14 +230,24 @@ public class WorkItem : MonoBehaviour
                 float total = breakWeight + baitWeight;
                 if (total <= 0f)
                 {
-                    if (Random.value < 0.5f) Break();
+                    if (Random.value < 0.5f)
+                    {
+                        Break();
+                        Debug.Log("Attempting to play sound");
+                        AudioManager.Instance.PlaySound(breakInt);  
+                    }
                     else Bait();
                 }
                 else
                 {
                     float roll = Random.Range(0f, total);
                     if (roll < breakWeight)
+                    {
                         Break();
+                        Debug.Log("Attempting to play sound");
+                        AudioManager.Instance.PlaySound(breakInt);
+                    }
+
                     else
                         Bait();
                 }
@@ -279,7 +292,7 @@ public class WorkItem : MonoBehaviour
     {
         if (IsBroken) return;
         IsBroken = true;
-
+        
         ApplyTintOverride(brokenColor);
         OnBroken?.Invoke();
 

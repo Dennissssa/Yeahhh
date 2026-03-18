@@ -1773,7 +1773,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 23b0bc86eefff8a4bb01e99cf73cd03a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioManager
-  EffectsSource: {fileID: 1780784104}
+  EffectsSource1: {fileID: 0}
+  EffectsSource2: {fileID: 0}
+  EffectsSource3: {fileID: 0}
+  EffectsSource4: {fileID: 0}
+  EffectsSource5: {fileID: 0}
   MusicSource: {fileID: 387048559}
   EffectsList:
   - {fileID: 8300000, guid: 32de7bd7c292ead4cbd46e38793969d8, type: 3}
