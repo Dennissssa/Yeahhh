@@ -10,10 +10,13 @@ using System.Threading;
 /// Two-way serial bridge between Unity and the Arduino Uno.
 ///
 /// ── Arduino → Unity  (piezo hits) ────────────────────────────
-///   Arduino sends "HIT_1" … "HIT_5" when a piezo is struck.
+///   Arduino sends "HIT_1" … "HIT_6" when a piezo is struck.
 ///   Each fires a UnityEvent in the onHit array on the main thread.
-///   Wire onHit[0]…onHit[4] in the Inspector to the same action
+///   Wire onHit[0]…onHit[5] in the Inspector to the same action
 ///   your keyboard shortcut already calls to fix/clear an object.
+///
+///   Object 6 (Printer): hitting piezo 6 (A5) stops the printer
+///   and clears its anomaly state.
 ///
 /// ── Unity → Arduino  (LED states) ────────────────────────────
 ///   Attach a WorkItem to each LEDBinding entry. The bridge listens
@@ -23,22 +26,29 @@ using System.Threading;
 ///     OnFixed        → LED{n}:NORMAL    (red)
 ///     OnBaitingEnded → LED{n}:NORMAL    (red)
 ///
+/// ── Unity → Arduino  (printer motor) ─────────────────────────
+///   Attach a WorkItem to the PrinterBinding. The bridge listens
+///   to that WorkItem's events and sends:
+///     OnBroken       → PRINTER:ON    (start printing)
+///     OnFixed        → PRINTER:OFF   (stop printing)
+///   The printer has no bait state.
+///
 /// ── Setup ─────────────────────────────────────────────────────
 ///   1. Attach this script to any persistent GameObject.
 ///   2. Set portName to your Arduino's port.
 ///   3. Add one LEDBinding per physical LED ring and drag in its WorkItem.
-///   4. Wire onHit[0]…onHit[4] to the same method(s) your keyboard input calls.
+///   4. Drag the Object 6 WorkItem into the PrinterBinding slot.
+///   5. Wire onHit[0]…onHit[5] to the same method(s) your keyboard input calls.
 /// </summary>
 public class ArduinoSerialBridge : MonoBehaviour
 {
     // ── Configuration ─────────────────────────────────────────
-    // Change these if your hardware setup changes.
 
     private const string DefaultPortName = "/dev/cu.usbserial-1130"; // Windows: "COM3"
     private const int DefaultBaudRate = 9600;
     private const int ReadTimeoutMs = 100;
     private const int WriteTimeoutMs = 100;
-    private const int NumPiezos = 5;
+    private const int NumPiezos = 6;
 
     // ── Inspector ─────────────────────────────────────────────
 
@@ -47,17 +57,21 @@ public class ArduinoSerialBridge : MonoBehaviour
     [SerializeField] private string portName = DefaultPortName;
     [SerializeField] private int baudRate = DefaultBaudRate;
 
-    [Header("Piezo Hit Events  (index 0 = Object 1, index 4 = Object 5)")]
+    [Header("Piezo Hit Events  (index 0 = Object 1, index 5 = Object 6 / Printer)")]
     [Tooltip("Wire each slot to the same action your keyboard shortcut calls.")]
     public UnityEvent[] onHit = new UnityEvent[NumPiezos];
 
     [Header("Block Hit（按住时所有 onHit 不触发）")]
-    [Tooltip("按住此键期间，所有 Piezo Hit 不触发（不调用 onHit，相当于不修 WorkItem）。设为 None 则不屏蔽")]
+    [Tooltip("按住此键期间，所有 Piezo Hit 不触发（不调用 onHit）。设为 None 则不屏蔽")]
     public KeyCode blockHitKeyCode = KeyCode.None;
 
     [Header("LED → WorkItem Bindings")]
     [Tooltip("One entry per physical LED ring.")]
     [SerializeField] private LEDBinding[] ledBindings = Array.Empty<LEDBinding>();
+
+    [Header("Printer → WorkItem Binding (Object 6)")]
+    [Tooltip("WorkItem for the printer. OnBroken starts printing, OnFixed stops it.")]
+    [SerializeField] private WorkItem printerWorkItem;
 
     // ── Private state ─────────────────────────────────────────
 
@@ -65,11 +79,12 @@ public class ArduinoSerialBridge : MonoBehaviour
     private Thread _readThread;
     private bool _isRunning;
 
-    // Flags written by background thread, read by main-thread Update()
     private readonly bool[] _hitPending = new bool[NumPiezos];
 
-    // Stored so we can cleanly remove listeners on destroy
     private readonly List<BoundListener> _boundListeners = new List<BoundListener>();
+
+    private UnityAction _printerOnBroken;
+    private UnityAction _printerOnFixed;
 
     // ── Lifecycle ─────────────────────────────────────────────
 
@@ -79,18 +94,18 @@ public class ArduinoSerialBridge : MonoBehaviour
         if (_serial == null || !_serial.IsOpen) return;
 
         BindWorkItems();
+        BindPrinter();
 
         foreach (var binding in ledBindings)
             SendLED(binding.LedIndex, LedCommand.Normal);
+
+        SendPrinter(false);
     }
 
     private void Update()
     {
-        // 按住 blockHitKeyCode 期间不触发任何 onHit
         bool blockHits = blockHitKeyCode != KeyCode.None && IsBlockKeyHeld();
 
-        // Unity API calls must happen on the main thread.
-        // Background thread only sets flags; Update() fires the events.
         for (int i = 0; i < NumPiezos; i++)
         {
             if (!_hitPending[i]) continue;
@@ -163,6 +178,7 @@ public class ArduinoSerialBridge : MonoBehaviour
     private void OnDestroy()
     {
         UnbindWorkItems();
+        UnbindPrinter();
 
         _isRunning = false;
         _readThread?.Join(500);
@@ -220,7 +236,7 @@ public class ArduinoSerialBridge : MonoBehaviour
         {
             if (binding.WorkItem == null) continue;
 
-            int idx = binding.LedIndex; // capture for lambda closure
+            int idx = binding.LedIndex;
 
             UnityAction onBroken = () => SendLED(idx, LedCommand.Anomaly);
             UnityAction onBaiting = () => SendLED(idx, LedCommand.Bait);
@@ -250,18 +266,59 @@ public class ArduinoSerialBridge : MonoBehaviour
         _boundListeners.Clear();
     }
 
+    // ── Printer binding ───────────────────────────────────────
+
+    private void BindPrinter()
+    {
+        if (printerWorkItem == null) return;
+
+        _printerOnBroken = () => SendPrinter(true);
+        _printerOnFixed = () => SendPrinter(false);
+
+        printerWorkItem.OnBroken.AddListener(_printerOnBroken);
+        printerWorkItem.OnFixed.AddListener(_printerOnFixed);
+    }
+
+    private void UnbindPrinter()
+    {
+        if (printerWorkItem == null) return;
+
+        if (_printerOnBroken != null)
+            printerWorkItem.OnBroken.RemoveListener(_printerOnBroken);
+        if (_printerOnFixed != null)
+            printerWorkItem.OnFixed.RemoveListener(_printerOnFixed);
+    }
+
     // ── Public API ────────────────────────────────────────────
 
     /// <summary>
     /// Sends an LED state command to the Arduino.
-    /// Use LedCommand constants: LedCommand.Normal / Anomaly / Bait.
-    /// ledIndex: 1 = pin 2 (Object 1)   2 = pin 7 (Object 4)
+    /// ledIndex: 1 = pin 2 (Object 1)   2 = pin 3 (Object 4)
     /// </summary>
     public void SendLED(int ledIndex, string command)
     {
         if (_serial == null || !_serial.IsOpen) return;
 
         string msg = $"LED{ledIndex}:{command}";
+        try
+        {
+            _serial.WriteLine(msg);
+            Debug.Log($"[ArduinoSerialBridge] Sent: {msg}");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[ArduinoSerialBridge] Write error: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// true = PRINTER:ON   false = PRINTER:OFF
+    /// </summary>
+    public void SendPrinter(bool on)
+    {
+        if (_serial == null || !_serial.IsOpen) return;
+
+        string msg = on ? "PRINTER:ON" : "PRINTER:OFF";
         try
         {
             _serial.WriteLine(msg);
@@ -300,9 +357,6 @@ public class ArduinoSerialBridge : MonoBehaviour
         }
     }
 
-    // ── Constants ─────────────────────────────────────────────
-
-    /// <summary>LED state command strings that match the Arduino protocol.</summary>
     public static class LedCommand
     {
         public const string Normal = "NORMAL";
@@ -310,23 +364,16 @@ public class ArduinoSerialBridge : MonoBehaviour
         public const string Bait = "BAIT";
     }
 
-    // ── Data classes ──────────────────────────────────────────
-
-    /// <summary>
-    /// Binds one physical LED ring to a WorkItem.
-    /// The LED automatically mirrors the WorkItem's game state.
-    /// </summary>
     [Serializable]
     public class LEDBinding
     {
-        [Tooltip("1 = LED ring on pin 2 (Object 1)   2 = LED ring on pin 7 (Object 4)")]
+        [Tooltip("1 = LED ring on pin 2 (Object 1)   2 = LED ring on pin 3 (Object 4)")]
         public int LedIndex = 1;
 
         [Tooltip("WorkItem this LED should follow. Leave null for manual control.")]
         public WorkItem WorkItem;
     }
 
-    /// <summary>Stores listener references so they can be cleanly removed on destroy.</summary>
     private class BoundListener
     {
         public readonly WorkItem WorkItem;
