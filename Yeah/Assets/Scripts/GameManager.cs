@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 public class GameManager : MonoBehaviour
 {
@@ -18,6 +19,7 @@ public class GameManager : MonoBehaviour
     public float maxWork = 100f; // 顶峰值：到这个值不再加，但可以减
     public float workPunishment;
     public float workUltraPunishment;
+    public float workMashGain;
     public float workGainPerSecondPerWorkingItem = 1f;
     public float workLossPerSecondPerBrokenItem = 3f;
     public float bossMinWorkThreshold = 20f; // 上司检查时 work 必须 >= 这个值，否则输
@@ -180,6 +182,10 @@ public class GameManager : MonoBehaviour
         work = work - workUltraPunishment;
     }
 
+    public void Reward()
+    {
+        work = work + workMashGain;
+    }
     IEnumerator BossLoop()
     {
         while (!isGameOver)
