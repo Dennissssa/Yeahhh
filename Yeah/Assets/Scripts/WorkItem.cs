@@ -233,10 +233,13 @@ public class WorkItem : MonoBehaviour
                     if (Random.value < 0.5f)
                     {
                         Break();
-                        Debug.Log("Attempting to play sound");
                         AudioManager.Instance.PlaySound(breakInt);  
                     }
-                    else Bait();
+                    else
+                    {
+                        Bait();
+                        AudioManager.Instance.PlaySound(baitInt);
+                    }
                 }
                 else
                 {
@@ -244,12 +247,15 @@ public class WorkItem : MonoBehaviour
                     if (roll < breakWeight)
                     {
                         Break();
-                        Debug.Log("Attempting to play sound");
                         AudioManager.Instance.PlaySound(breakInt);
                     }
 
                     else
+                    {
                         Bait();
+                        AudioManager.Instance.PlaySound(baitInt);
+                    }
+
                 }
             }
             else
