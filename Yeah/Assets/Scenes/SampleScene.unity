@@ -201,9 +201,9 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5545686}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 5, y: 5, z: 5}
+  m_LocalScale: {x: 6, y: 6, z: 6}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 833216426}
@@ -211,7 +211,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 100, y: 100}
+  m_SizeDelta: {x: 100, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &5545688
 MonoBehaviour:
@@ -233,7 +233,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 5b8c9b09d73406749998d44c924441b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: c4dd213f92f58344ba8b9f6c1b04a333, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -884,8 +884,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c29f7bde779bc2d4498839f548cbcc70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorkItem
-  minTimeToBreak: 4
-  maxTimeToBreak: 10
+  minTimeToBreak: 10
+  maxTimeToBreak: 15
   breakWeight: 2
   baitWeight: 1
   repairBindingPath: <Keyboard>/3
@@ -915,7 +915,7 @@ MonoBehaviour:
   baitInt: 10
   rightSFX: 8
   wrongSFX: 9
-  itemName: Monitor
+  itemName: Speaker
 --- !u!65 &206531937
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1141,8 +1141,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: New Text
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2467cb1eaef21c441a524da08445d82a, type: 2}
+  m_sharedMaterial: {fileID: 1089014854151996333, guid: 2467cb1eaef21c441a524da08445d82a, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1166,15 +1166,15 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 24
+  m_fontSizeBase: 24
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 1
   m_HorizontalAlignment: 4
-  m_VerticalAlignment: 256
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0
@@ -1226,7 +1226,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 277470223}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 20}
+  m_LocalPosition: {x: 0, y: 0, z: 28}
   m_LocalScale: {x: 3.1921, y: 3.1921, z: 3.1921}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1234,7 +1234,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 557, y: -363}
+  m_AnchoredPosition: {x: 420, y: -326}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &293262219
@@ -1544,8 +1544,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c29f7bde779bc2d4498839f548cbcc70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorkItem
-  minTimeToBreak: 4
-  maxTimeToBreak: 10
+  minTimeToBreak: 10
+  maxTimeToBreak: 15
   breakWeight: 2
   baitWeight: 1
   repairBindingPath: <Keyboard>/1
@@ -1575,7 +1575,7 @@ MonoBehaviour:
   baitInt: 10
   rightSFX: 8
   wrongSFX: 9
-  itemName: Skull
+  itemName: Monitor
 --- !u!65 &363469230
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3325,8 +3325,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: dc2c51ccade1fe94bba1c63f25e5eb9b, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -3372,8 +3372,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c29f7bde779bc2d4498839f548cbcc70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorkItem
-  minTimeToBreak: 4
-  maxTimeToBreak: 10
+  minTimeToBreak: 10
+  maxTimeToBreak: 15
   breakWeight: 2
   baitWeight: 1
   repairBindingPath: <Keyboard>/2
@@ -3403,7 +3403,7 @@ MonoBehaviour:
   baitInt: 10
   rightSFX: 8
   wrongSFX: 9
-  itemName: Phone
+  itemName: Lamp
 --- !u!65 &528905811
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3531,17 +3531,20 @@ RectTransform:
   m_GameObject: {fileID: 593969687}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 63}
-  m_LocalScale: {x: 11.459721, y: 9.178056, z: 9.178056}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 8, y: 6.407176, z: 6.407176}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 533366878}
   - {fileID: 2069350943}
   - {fileID: 672301164}
+  - {fileID: 962100932}
+  - {fileID: 1525831246}
+  - {fileID: 1509181832}
   m_Father: {fileID: 833216426}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 34, y: 267}
+  m_AnchoredPosition: {x: -1, y: 273}
   m_SizeDelta: {x: 160, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &593969689
@@ -3967,7 +3970,7 @@ RectTransform:
   m_GameObject: {fileID: 814287471}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.8, y: 0.8, z: 0.8}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 833216426}
@@ -3997,7 +4000,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -1795920602, guid: bea6afafc0db60b409f86197c64ce90a, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 1aee9652def018a489fed7b1fe7cad43, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -4240,11 +4243,8 @@ RectTransform:
   - {fileID: 277470226}
   - {fileID: 2128317766}
   - {fileID: 593969688}
-  - {fileID: 1040974412}
-  - {fileID: 962100932}
-  - {fileID: 1525831246}
-  - {fileID: 1509181832}
   - {fileID: 5545687}
+  - {fileID: 1040974412}
   m_Father: {fileID: 1631198163}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -4294,8 +4294,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c29f7bde779bc2d4498839f548cbcc70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorkItem
-  minTimeToBreak: 4
-  maxTimeToBreak: 10
+  minTimeToBreak: 10
+  maxTimeToBreak: 15
   breakWeight: 2
   baitWeight: 1
   repairBindingPath: <Keyboard>/6
@@ -4544,7 +4544,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 52, y: -171}
+  m_AnchoredPosition: {x: 0, y: -200}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &951229959
@@ -4742,16 +4742,16 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 962100931}
-  m_LocalRotation: {x: -0, y: -0, z: -0.7064992, w: 0.7077139}
-  m_LocalPosition: {x: 0, y: 0, z: 63}
-  m_LocalScale: {x: 1.7856289, y: 3.1921, z: 3.1921}
+  m_LocalRotation: {x: 0.000000007450579, y: -0.0000000037252894, z: -0.7064992, w: 0.7077138}
+  m_LocalPosition: {x: 0, y: 0, z: -0.00013300235}
+  m_LocalScale: {x: 0.19455405, y: 0.27854973, z: 0.347797}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 833216426}
+  m_Father: {fileID: 593969688}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: -89.902}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 7, y: 48}
+  m_AnchoredPosition: {x: -2.3560476, y: -23.861275}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &962100933
@@ -4953,7 +4953,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 2
+  m_SortingOrder: 5
   m_TargetDisplay: 0
 --- !u!1 &983266343 stripped
 GameObject:
@@ -4972,8 +4972,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c29f7bde779bc2d4498839f548cbcc70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorkItem
-  minTimeToBreak: 4
-  maxTimeToBreak: 10
+  minTimeToBreak: 10
+  maxTimeToBreak: 15
   breakWeight: 2
   baitWeight: 1
   repairBindingPath: <Keyboard>/4
@@ -5003,7 +5003,7 @@ MonoBehaviour:
   baitInt: 10
   rightSFX: 8
   wrongSFX: 9
-  itemName: Lamp
+  itemName: Skull
 --- !u!65 &983266345
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -5842,8 +5842,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c29f7bde779bc2d4498839f548cbcc70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorkItem
-  minTimeToBreak: 4
-  maxTimeToBreak: 10
+  minTimeToBreak: 10
+  maxTimeToBreak: 15
   breakWeight: 2
   baitWeight: 1
   repairBindingPath: <Keyboard>/5
@@ -5873,7 +5873,7 @@ MonoBehaviour:
   baitInt: 10
   rightSFX: 8
   wrongSFX: 9
-  itemName: Speaker
+  itemName: Phone
 --- !u!65 &1141977273
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -6045,7 +6045,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1156744594}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 20}
+  m_LocalPosition: {x: 0, y: 0, z: -2}
   m_LocalScale: {x: 3.1921, y: 3.1921, z: 3.1921}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6053,7 +6053,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -540, y: -370}
+  m_AnchoredPosition: {x: -414, y: -329}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1156744596
@@ -6078,8 +6078,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: New Text
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2467cb1eaef21c441a524da08445d82a, type: 2}
+  m_sharedMaterial: {fileID: 1089014854151996333, guid: 2467cb1eaef21c441a524da08445d82a, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -6103,15 +6103,15 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 24
+  m_fontSizeBase: 24
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 1
   m_HorizontalAlignment: 1
-  m_VerticalAlignment: 256
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0
@@ -6751,16 +6751,16 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1509181831}
-  m_LocalRotation: {x: -0, y: -0, z: -0.7064992, w: 0.7077139}
-  m_LocalPosition: {x: 0, y: 0, z: 63}
-  m_LocalScale: {x: 2.1223984, y: 3.7941298, z: 3.7941298}
+  m_LocalRotation: {x: 0.000000007450579, y: -0.0000000037252894, z: -0.7064992, w: 0.7077138}
+  m_LocalPosition: {x: 0, y: 0, z: -0.0002207008}
+  m_LocalScale: {x: 0.23124693, y: 0.3310842, z: 0.4133915}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 833216426}
+  m_Father: {fileID: 593969688}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: -89.902}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -419, y: 77}
+  m_AnchoredPosition: {x: -39.529602, y: -20.701431}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1509181833
@@ -6887,16 +6887,16 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1525831245}
-  m_LocalRotation: {x: -0, y: -0, z: -0.7064992, w: 0.7077139}
-  m_LocalPosition: {x: 0, y: 0, z: 63}
-  m_LocalScale: {x: 1.7856289, y: 3.1921, z: 3.1921}
+  m_LocalRotation: {x: 0.000000007450579, y: -0.0000000037252894, z: -0.7064992, w: 0.7077138}
+  m_LocalPosition: {x: 0, y: 0, z: 0.000074398195}
+  m_LocalScale: {x: 0.19455405, y: 0.27854973, z: 0.347797}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 833216426}
+  m_Father: {fileID: 593969688}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: -89.902}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -485, y: 46}
+  m_AnchoredPosition: {x: -45.289062, y: -24.07901}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1525831247
@@ -7139,11 +7139,11 @@ MonoBehaviour:
   - {fileID: 206531936}
   - {fileID: 882021887}
   anomalyTexts:
-  - {fileID: 1328258632}
-  - {fileID: 47812029}
   - {fileID: 1583875790}
   - {fileID: 2050037866}
   - {fileID: 383483020}
+  - {fileID: 1328258632}
+  - {fileID: 47812029}
   - {fileID: 385697738}
   arduinoBridgeScript: {fileID: 1987669260}
 --- !u!4 &1583755465
@@ -8475,9 +8475,9 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2128317765}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: 0, y: 0, z: -3}
+  m_LocalScale: {x: 0.7, y: 0.7, z: 0.7}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 1838282528}
   - {fileID: 1583875789}
@@ -8490,7 +8490,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 557, y: -43}
+  m_AnchoredPosition: {x: 505, y: -23}
   m_SizeDelta: {x: 638.42004, y: 159.605}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1660057539 &9223372036854775807
