@@ -907,14 +907,16 @@ MonoBehaviour:
   OnBaitingEnded:
     m_PersistentCalls:
       m_Calls: []
+  OnRepairCorrect:
+    m_PersistentCalls:
+      m_Calls: []
+  OnRepairIncorrect:
+    m_PersistentCalls:
+      m_Calls: []
   debugLogs: 0
   debugBreakKeyOldInput: 0
   debugBreakBindingPath: <Keyboard>/b
   smokeParticles: {fileID: 7834365151588663595, guid: 480f836bc1737703b9502808639383b4, type: 3}
-  breakInt: 5
-  baitInt: 10
-  rightSFX: 8
-  wrongSFX: 9
   itemName: Speaker
 --- !u!65 &206531937
 BoxCollider:
@@ -956,9 +958,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::JiU.PlaySoundOnEventAudioManager
   effectIndex: 5
   loopBrokenSound: 1
-  baitEffectIndex: -1
+  baitEffectIndex: 10
   loopBaitSound: 1
   baitEndedEffectIndex: -1
+  repairCorrectEffectIndex: 8
+  repairWrongEffectIndex: 9
   workItem: {fileID: 206531936}
   pitchRandomRange: 0.257
   onPlayed:
@@ -1567,15 +1571,41 @@ MonoBehaviour:
   OnBaitingEnded:
     m_PersistentCalls:
       m_Calls: []
+  OnRepairCorrect:
+    m_PersistentCalls:
+      m_Calls: []
+  OnRepairIncorrect:
+    m_PersistentCalls:
+      m_Calls: []
   debugLogs: 0
   debugBreakKeyOldInput: 0
   debugBreakBindingPath: <Keyboard>/b
   smokeParticles: {fileID: 7834365151588663595, guid: 480f836bc1737703b9502808639383b4, type: 3}
-  breakInt: 0
-  baitInt: 10
-  rightSFX: 8
-  wrongSFX: 9
   itemName: Monitor
+--- !u!114 &887001010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 363469228}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54a91b37279dd44bac784065b40e02a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::JiU.PlaySoundOnEventAudioManager
+  effectIndex: 0
+  loopBrokenSound: 1
+  baitEffectIndex: 10
+  loopBaitSound: 1
+  baitEndedEffectIndex: -1
+  repairCorrectEffectIndex: 8
+  repairWrongEffectIndex: 9
+  workItem: {fileID: 363469229}
+  pitchRandomRange: 0
+  onPlayed:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &363469230
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3395,15 +3425,41 @@ MonoBehaviour:
   OnBaitingEnded:
     m_PersistentCalls:
       m_Calls: []
+  OnRepairCorrect:
+    m_PersistentCalls:
+      m_Calls: []
+  OnRepairIncorrect:
+    m_PersistentCalls:
+      m_Calls: []
   debugLogs: 0
   debugBreakKeyOldInput: 0
   debugBreakBindingPath: <Keyboard>/b
   smokeParticles: {fileID: 7834365151588663595, guid: 480f836bc1737703b9502808639383b4, type: 3}
-  breakInt: 0
-  baitInt: 10
-  rightSFX: 8
-  wrongSFX: 9
   itemName: Lamp
+--- !u!114 &887001011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 528905809}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54a91b37279dd44bac784065b40e02a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::JiU.PlaySoundOnEventAudioManager
+  effectIndex: 0
+  loopBrokenSound: 1
+  baitEffectIndex: 10
+  loopBaitSound: 1
+  baitEndedEffectIndex: -1
+  repairCorrectEffectIndex: 8
+  repairWrongEffectIndex: 9
+  workItem: {fileID: 528905810}
+  pitchRandomRange: 0
+  onPlayed:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &528905811
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4317,15 +4373,41 @@ MonoBehaviour:
   OnBaitingEnded:
     m_PersistentCalls:
       m_Calls: []
+  OnRepairCorrect:
+    m_PersistentCalls:
+      m_Calls: []
+  OnRepairIncorrect:
+    m_PersistentCalls:
+      m_Calls: []
   debugLogs: 0
   debugBreakKeyOldInput: 0
   debugBreakBindingPath: <Keyboard>/b
   smokeParticles: {fileID: 7834365151588663595, guid: 480f836bc1737703b9502808639383b4, type: 3}
-  breakInt: 0
-  baitInt: 10
-  rightSFX: 8
-  wrongSFX: 9
   itemName: Printer
+--- !u!114 &887001012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 882021885}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54a91b37279dd44bac784065b40e02a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::JiU.PlaySoundOnEventAudioManager
+  effectIndex: 0
+  loopBrokenSound: 1
+  baitEffectIndex: 10
+  loopBaitSound: 1
+  baitEndedEffectIndex: -1
+  repairCorrectEffectIndex: 8
+  repairWrongEffectIndex: 9
+  workItem: {fileID: 882021887}
+  pitchRandomRange: 0
+  onPlayed:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &882021888
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4716,6 +4798,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 54833eb6d72fcf1438da8fc91c280fb5, type: 3}
       insertIndex: -1
       addedObject: {fileID: 882021887}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 54833eb6d72fcf1438da8fc91c280fb5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 887001012}
   m_SourcePrefab: {fileID: 100100000, guid: 54833eb6d72fcf1438da8fc91c280fb5, type: 3}
 --- !u!1 &962100931
 GameObject:
@@ -4995,15 +5080,41 @@ MonoBehaviour:
   OnBaitingEnded:
     m_PersistentCalls:
       m_Calls: []
+  OnRepairCorrect:
+    m_PersistentCalls:
+      m_Calls: []
+  OnRepairIncorrect:
+    m_PersistentCalls:
+      m_Calls: []
   debugLogs: 0
   debugBreakKeyOldInput: 0
   debugBreakBindingPath: <Keyboard>/b
   smokeParticles: {fileID: 7834365151588663595, guid: 480f836bc1737703b9502808639383b4, type: 3}
-  breakInt: 7
-  baitInt: 10
-  rightSFX: 8
-  wrongSFX: 9
   itemName: Skull
+--- !u!114 &887001013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 983266343}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54a91b37279dd44bac784065b40e02a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::JiU.PlaySoundOnEventAudioManager
+  effectIndex: 7
+  loopBrokenSound: 1
+  baitEffectIndex: 10
+  loopBaitSound: 1
+  baitEndedEffectIndex: -1
+  repairCorrectEffectIndex: 8
+  repairWrongEffectIndex: 9
+  workItem: {fileID: 983266344}
+  pitchRandomRange: 0
+  onPlayed:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &983266345
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -5671,6 +5782,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b87286a03798773449dd4bf6ce9de5aa, type: 3}
       insertIndex: -1
       addedObject: {fileID: 363469231}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b87286a03798773449dd4bf6ce9de5aa, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 887001010}
   m_SourcePrefab: {fileID: 100100000, guid: b87286a03798773449dd4bf6ce9de5aa, type: 3}
 --- !u!4 &1127083643 stripped
 Transform:
@@ -5865,14 +5979,16 @@ MonoBehaviour:
   OnBaitingEnded:
     m_PersistentCalls:
       m_Calls: []
+  OnRepairCorrect:
+    m_PersistentCalls:
+      m_Calls: []
+  OnRepairIncorrect:
+    m_PersistentCalls:
+      m_Calls: []
   debugLogs: 0
   debugBreakKeyOldInput: 0
   debugBreakBindingPath: <Keyboard>/b
   smokeParticles: {fileID: 7834365151588663595, guid: 480f836bc1737703b9502808639383b4, type: 3}
-  breakInt: 4
-  baitInt: 10
-  rightSFX: 8
-  wrongSFX: 9
   itemName: Phone
 --- !u!65 &1141977273
 BoxCollider:
@@ -6011,9 +6127,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::JiU.PlaySoundOnEventAudioManager
   effectIndex: 4
   loopBrokenSound: 1
-  baitEffectIndex: -1
+  baitEffectIndex: 10
   loopBaitSound: 1
   baitEndedEffectIndex: -1
+  repairCorrectEffectIndex: 8
+  repairWrongEffectIndex: 9
   workItem: {fileID: 1141977272}
   pitchRandomRange: 0.275
   onPlayed:
@@ -6247,6 +6365,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 65f999c03cd1e5a4a883e0e047d810b8, type: 3}
       insertIndex: -1
       addedObject: {fileID: 983266344}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 65f999c03cd1e5a4a883e0e047d810b8, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 887001013}
   m_SourcePrefab: {fileID: 100100000, guid: 65f999c03cd1e5a4a883e0e047d810b8, type: 3}
 --- !u!1 &1328258630
 GameObject:
@@ -7901,6 +8022,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 54833eb6d72fcf1438da8fc91c280fb5, type: 3}
       insertIndex: -1
       addedObject: {fileID: 528905810}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 54833eb6d72fcf1438da8fc91c280fb5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 887001011}
   m_SourcePrefab: {fileID: 100100000, guid: 54833eb6d72fcf1438da8fc91c280fb5, type: 3}
 --- !u!4 &1800050576 stripped
 Transform:

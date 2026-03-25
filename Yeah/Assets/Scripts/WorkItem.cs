@@ -10,6 +10,9 @@ public class WorkItem : MonoBehaviour
     public float minTimeToBreak = 4f;
     public float maxTimeToBreak = 10f;
 
+    [Tooltip("关闭后 BreakLoop 不会自动进入 Broke/Bait（教程或脚本控制时用）")]
+    public bool enableAutoBreak = true;
+
     [Header("Broke / Bait 触发概率")]
     [Tooltip("下一次故障时触发 Broke 的权重，与 Bait 权重共同决定概率。例如 8 和 2 表示约 80% Broke、20% Bait")]
     [Min(0f)]
@@ -43,6 +46,11 @@ public class WorkItem : MonoBehaviour
     [Tooltip("Bait 时间到自行结束时触发（玩家未击打），可连到 LED 恢复等")]
     public UnityEvent OnBaitingEnded;
 
+    [Tooltip("击打判定为「修好」时触发（在 Fix 之前）；可接 PlaySoundOnEventAudioManager 的维修正确音")]
+    public UnityEvent OnRepairCorrect;
+    [Tooltip("击打判定为「错误」（Bait 上乱按或未故障惩罚）时触发；可接 PlaySoundOnEventAudioManager 的维修错误音")]
+    public UnityEvent OnRepairIncorrect;
+
     [Header("Debug")]
     public bool debugLogs = false;
     public KeyCode debugBreakKeyOldInput = KeyCode.None; // 旧Input不用（留空）
@@ -59,11 +67,6 @@ public class WorkItem : MonoBehaviour
 
     //this doesn't really have a point but it's fun lol
     public GameObject smokeParticles;
-
-    public int breakInt;
-    public int baitInt;
-    public int rightSFX;
-    public int wrongSFX;
 
     public string itemName;
     private static readonly int[] ColorPropIds =
@@ -221,43 +224,49 @@ public class WorkItem : MonoBehaviour
         {
             if (!IsBroken || !IsBaiting)
             {
-                float t = Random.Range(minTimeToBreak, maxTimeToBreak);
+                if (!enableAutoBreak)
+                {
+                    yield return null;
+                    continue;
+                }
+
+                float minT = minTimeToBreak;
+                float maxT = maxTimeToBreak;
+                if (GameManager.Instance != null && GameManager.Instance.UsePhaseBreakTiming())
+                {
+                    minT = GameManager.Instance.GetActiveBreakIntervalMin();
+                    maxT = GameManager.Instance.GetActiveBreakIntervalMax();
+                }
+
+                float t = Random.Range(minT, maxT);
                 yield return new WaitForSeconds(t);
 
-                // Boss 预警开始到离开期间：不产生新故障
                 if (GameManager.FreezeFailures)
                     continue;
 
-                // 按 Inspector 中的 breakWeight / baitWeight 决定本次是 Broke 还是 Bait
                 float total = breakWeight + baitWeight;
                 if (total <= 0f)
                 {
                     if (Random.value < 0.5f)
                     {
+                        if (GameManager.Instance != null && !GameManager.Instance.CanStartNewBrokeState())
+                            continue;
                         Break();
-                        AudioManager.Instance.PlaySound(breakInt);  
                     }
                     else
-                    {
                         Bait();
-                        AudioManager.Instance.PlaySound(baitInt);
-                    }
                 }
                 else
                 {
                     float roll = Random.Range(0f, total);
                     if (roll < breakWeight)
                     {
+                        if (GameManager.Instance != null && !GameManager.Instance.CanStartNewBrokeState())
+                            continue;
                         Break();
-                        AudioManager.Instance.PlaySound(breakInt);
                     }
-
                     else
-                    {
                         Bait();
-                        AudioManager.Instance.PlaySound(baitInt);
-                    }
-
                 }
             }
             else
@@ -270,28 +279,32 @@ public class WorkItem : MonoBehaviour
     /// <summary>尝试修好（按键或 Uduino 触发）。可从 Inspector 中 UduinoPinToKeyTrigger 的 onTriggered 或「直接修好目标」调用。</summary>
     public void TryRepair()
     {
-        Debug.Log($"I am trying to fix {this.itemName}"!);
+        Debug.Log($"I am trying to fix {this.itemName}!");
+
+        // 仅真正「损坏」且通过距离等校验后才会 Win + Fix；Bait / 空闲乱按只走 Lose 并 return
         if (!IsBroken)
         {
-            if (IsBaiting && GameManager.Instance != null)
+            if (IsBaiting)
             {
-                AudioManager.Instance.PlaySound(wrongSFX);
-                GameManager.Instance.UltraPunishment();
+                if (GameManager.Instance != null)
+                    GameManager.Instance.UltraPunishment();
+                OnRepairIncorrect?.Invoke();
+                return;
             }
 
-            else if (GameManager.Instance != null)
-            {
+            if (GameManager.Instance != null)
                 GameManager.Instance.Punishment();
-                AudioManager.Instance.PlaySound(wrongSFX);
-            }
-
+            OnRepairIncorrect?.Invoke();
+            return;
         }
+
         if (requirePlayerInRange)
         {
             if (player == null) return;
             if (Vector3.Distance(player.position, transform.position) > interactRange) return;
         }
-        AudioManager.Instance.PlaySound(rightSFX);
+
+        OnRepairCorrect?.Invoke();
         Fix();
     }
 
