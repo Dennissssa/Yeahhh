@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
@@ -11,14 +12,22 @@ public class GameManager : MonoBehaviour
 
     public static bool FreezeFailures { get; private set; } = false;
 
-    [Header("Work Value（无阶段配置时作为默认值；有阶段时由阶段覆盖）")]
+    [Header("Work 压力条（0 起计，涨至 maxWork 失败；无阶段时用下列默认）")]
     public float work = 0f;
     public float maxWork = 100f;
     public float workPunishment;
     public float workUltraPunishment;
+    [Tooltip("Reward() 调用时降低的压力条（向 0）")]
     public float workMashGain;
+    [Tooltip("每台正常运作物品每秒降低的压力")]
     public float workGainPerSecondPerWorkingItem = 1f;
+    [Tooltip("每台 Broke 每秒增加的压力")]
     public float workLossPerSecondPerBrokenItem = 3f;
+    [Tooltip("无 gamePhases 时：Broke 瞬间加压")]
+    public float workPressureInstantOnBroke = 5f;
+    [Tooltip("无 gamePhases 时：修好 Broke 瞬间减压")]
+    public float workPressureInstantOnBrokeRepair = 8f;
+    [Tooltip("Boss 不再校验工作量，仅保留兼容")]
     public float bossMinWorkThreshold = 20f;
 
     [Header("Boss 来袭（参数见 BossIncomingConfig 组件）")]
@@ -33,7 +42,7 @@ public class GameManager : MonoBehaviour
     public List<WorkItem> tutorialBreakOrder = new List<WorkItem>();
 
     [Header("正常流程阶段")]
-    [Tooltip("开局应用第 0 项；阶段进阶仅由规范化表现分达到 BossIncomingConfig 阈值触发（与 Boss 无关）。无列表则保持 Inspector 默认")]
+    [Tooltip("开局应用第 0 项；阶段进阶由规范化表现分（TotalPerformanceScore/分母）达到各阶段阈值触发（与 Boss 无关）。无列表则保持 Inspector 默认")]
     public List<GamePhaseConfig> gamePhases = new List<GamePhaseConfig>();
 
     [Header("胜利条件")]
@@ -62,22 +71,31 @@ public class GameManager : MonoBehaviour
 
     public List<WorkItem> items = new List<WorkItem>();
 
-    [Header("损坏提示 UI（槽位 + 滑入）")]
-    [Tooltip("含 TextMeshProUGUI 的条目预制体，将作为子物体生成到下方列表中的槽位下")]
-    public GameObject warningEntryPrefab;
+    [Header("损坏 / Boss 预警 UI（单面板，无 Prefab）")]
+    [Tooltip("需要显示任意提示时设为 true，无提示时 false")]
+    public GameObject brokenWarningPanelRoot;
 
-    [Tooltip("场景中 UI 上的空 RectTransform 槽位；始终使用列表中从前到后第一个「未被占用」的槽位（含延迟中的预留）")]
-    public List<RectTransform> warningSlotRects = new List<RectTransform>();
+    [Tooltip("损坏文案与 Boss 预警文案共用此 TMP")]
+    public TextMeshProUGUI brokenWarningText;
 
-    [Tooltip("滑入起点 = 预制体默认 anchoredPosition + 该偏移（槽位本地空间）。例如 (400,0) 从右侧、(0,-80) 从下方")]
-    public Vector2 warningSlideInFromOffset = new Vector2(320f, 0f);
+    [Tooltip("可选：提示时切换为 brokenWarningActiveSprite，无下一则提示或进入 Boss 冻结窗时恢复默认")]
+    public Image brokenWarningIconImage;
 
-    [Tooltip("滑入动画时长（秒）；0 则直接出现在终点")]
+    [Tooltip("进入「新一轮」物品提示时使用的图标（连续提示下一个损坏物时不改图）")]
+    public Sprite brokenWarningActiveSprite;
+
+    [Tooltip("可选：Boss 预警前半段（非冻结窗）对此 RectTransform 做晃动；冻结窗内停止")]
+    public RectTransform brokenWarningShakeTarget;
+
+    [Tooltip("Boss 预警晃动幅度（本地像素量级）")]
+    public float brokenWarningBossShakeAmplitude = 10f;
+
+    [Tooltip("Boss 预警晃动频率")]
+    public float brokenWarningBossShakeFrequency = 14f;
+
+    [Tooltip("修好当前提示物后若还有排队中的提示：先关面板再等待此时长再显示下一则（类似对话停顿）")]
     [Min(0f)]
-    public float warningSlideInDuration = 0.35f;
-
-    [Tooltip("0~1 进度曲线；留空或无关键帧时用线性")]
-    public AnimationCurve warningSlideInEase = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    public float interBrokenWarningPauseSeconds = 0.35f;
 
     [Header("损坏提示（教程 / 尚无阶段配置时）")]
     [Min(0f)]
@@ -89,7 +107,7 @@ public class GameManager : MonoBehaviour
     /// <summary>Hack 事件驱动的累计表现分（可为负）；教程段与未启用阶段计分前不变。</summary>
     public float TotalPerformanceScore => _performanceScoreRaw;
 
-    /// <summary>0~1 规范化表现分，用于分数强触 Boss 与自动阶段进阶。</summary>
+    /// <summary>0~1，为 TotalPerformanceScore / performanceScoreNormalizationDivisor（Clamp01），用于分数强触 Boss 与阶段进阶。</summary>
     public float NormalizedPerformanceScore => ComputeNormalizedPerformanceScore();
 
     public bool IsVictory { get; private set; }
@@ -103,30 +121,26 @@ public class GameManager : MonoBehaviour
     public float BossWarningTimeLeft { get; private set; } = 0f;
 
     int _activeMaxConcurrentBroken = int.MaxValue;
+    float _activeWorkPressureInstantOnBroke = 5f;
+    float _activeWorkPressureInstantOnBrokeRepair = 8f;
     float _activeBreakMin = 4f;
     float _activeBreakMax = 10f;
     float _activeWarningShowDelayAfterBreak = 0.5f;
     string _activeWarningMessageFormat = "{0} is broken!";
 
-    sealed class BrokenWarningState
-    {
-        public Coroutine DelayRoutine;
-        public Coroutine SlideRoutine;
-        public GameObject Instance;
-        /// <summary>延迟等待期间即占用，避免多条抢同一槽位。</summary>
-        public RectTransform ReservedSlot;
-    }
+    readonly Dictionary<WorkItem, Coroutine> _itemBrokenWarningDelays = new Dictionary<WorkItem, Coroutine>();
+    readonly List<WorkItem> _brokenWarningReadyQueue = new List<WorkItem>();
 
-    sealed class ItGuyWarningState
-    {
-        public Coroutine DelayRoutine;
-        public Coroutine SlideRoutine;
-        public GameObject Instance;
-        public RectTransform ReservedSlot;
-    }
+    WorkItem _displayedBrokenWarningItem;
+    WorkItem _resumeBrokenWarningAfterBoss;
+    bool _brokenWarningChainFresh = true;
 
-    readonly Dictionary<WorkItem, BrokenWarningState> _brokenWarnings = new Dictionary<WorkItem, BrokenWarningState>();
-    ItGuyWarningState _itGuyWarning;
+    Sprite _defaultBrokenWarningIconSprite;
+    Vector3 _brokenWarningShakeBaseLocalPos;
+    Coroutine _brokenWarningInterPauseRoutine;
+    Coroutine _bossWarningShakeRoutine;
+    bool _bossWarningUiInFreezeHide;
+    string _bossApproachWarningMessage;
 
     int _currentPhaseIndex;
     bool _tutorialBreakSequenceDone;
@@ -142,9 +156,10 @@ public class GameManager : MonoBehaviour
     bool _applyCooldownBeforeNextBossWait;
 
     float _performanceScoreRaw;
+    float _performanceScoreRawWhenEnteredCurrentPhase;
 
     float _victoryCountdownRemaining;
-    bool _phasePromotionArmed = true;
+    bool _phasePromotionArmed;
     float _timeSinceLastScorePhasePromotion = 1000f;
 
     /// <summary>规范化分顶到 ~1 后无法回落触发滞回，用该间隔允许再次分数升阶（秒）。</summary>
@@ -169,13 +184,12 @@ public class GameManager : MonoBehaviour
 
     void OnDestroy()
     {
-        ClearItGuyWarning();
-        ClearAllBrokenWarnings();
+        ShutdownBrokenWarningSystem();
     }
 
     void Start()
     {
-        work = maxWork;
+        work = 0f;
 
         if (autoFindItemsOnStart && items.Count == 0)
         {
@@ -187,6 +201,7 @@ public class GameManager : MonoBehaviour
         _activeBreakMin = 4f;
         _activeBreakMax = 10f;
         _performanceScoreRaw = 0f;
+        _performanceScoreRawWhenEnteredCurrentPhase = 0f;
         _activeWarningShowDelayAfterBreak = Mathf.Max(0f, tutorialWarningShowDelayAfterBreak);
         _activeWarningMessageFormat = string.IsNullOrEmpty(tutorialWarningMessageFormat)
             ? "{0} is broken!"
@@ -196,9 +211,9 @@ public class GameManager : MonoBehaviour
         {
             ui.InitWorkSlider(maxWork);
             ui.SetWork(work);
-            ui.SetWorkBossMinThresholdIndicator(bossMinWorkThreshold, maxWork);
             ui.SetTime(_victoryCountdownRemaining);
             ui.HideGameOver();
+            ui.HideWorkProgressLose();
             ui.HideGameWin();
         }
 
@@ -214,9 +229,14 @@ public class GameManager : MonoBehaviour
             _currentPhaseIndex = 0;
             ApplyPhaseConfig(gamePhases[0]);
             _normalPerformanceScoringActive = !enableTutorial;
+            SyncPhasePromotionArmedToCurrentThreshold();
         }
         else
+        {
             _normalPerformanceScoringActive = false;
+            _activeWorkPressureInstantOnBroke = workPressureInstantOnBroke;
+            _activeWorkPressureInstantOnBrokeRepair = workPressureInstantOnBrokeRepair;
+        }
 
         if (enableTutorial)
         {
@@ -235,6 +255,11 @@ public class GameManager : MonoBehaviour
         _bossLoopCoroutine = StartCoroutine(BossLoop());
 
         DebugLogPhasePromotionAtGameStart();
+
+        if (brokenWarningIconImage != null)
+            _defaultBrokenWarningIconSprite = brokenWarningIconImage.sprite;
+        if (brokenWarningShakeTarget != null)
+            _brokenWarningShakeBaseLocalPos = brokenWarningShakeTarget.localPosition;
     }
 
     void DebugLogPhasePromotionAtGameStart()
@@ -242,13 +267,10 @@ public class GameManager : MonoBehaviour
         if (!debugLogPhaseAndScore)
             return;
 
-        float half = 500f;
-        if (bossIncomingConfig != null && bossIncomingConfig.performanceNormalizedHalfRange > 0f)
-            half = Mathf.Max(1f, bossIncomingConfig.performanceNormalizedHalfRange);
-
-        float thr = GetScorePhasePromotionThreshold();
         float hyst = GetScorePhasePromotionHysteresis();
-        float rawDeltaFromNeutral = (thr - 0.5f) * 2f * half;
+        float div = bossIncomingConfig != null
+            ? Mathf.Max(1e-4f, bossIncomingConfig.performanceScoreNormalizationDivisor)
+            : 1000f;
 
         string phaseBlock;
         if (gamePhases == null || gamePhases.Count == 0)
@@ -256,17 +278,35 @@ public class GameManager : MonoBehaviour
         else if (gamePhases.Count <= 1)
             phaseBlock = $"gamePhases 仅 1 条 → 不会因分数升阶。当前阶段索引={_currentPhaseIndex}。";
         else
-            phaseBlock =
-                $"阶段数={gamePhases.Count}，当前阶段索引={_currentPhaseIndex}（0 起）。\n" +
-                $"升阶条件：规范化表现分 NormalizedPerformanceScore ≥ {thr:F3}。\n" +
-                $"滞回：分数需先低于 {thr - hyst:F3} 后，再次升破 {thr:F3} 才会进入下一阶段（防阈值抖动）。\n" +
-                $"若规范化分已顶到 1.0（Clamp 上限），无法再回落触发滞回，则每间隔 ≥{MinSecondsBetweenScorePhasePromotionsWhenSaturated:F2}s 且仍 ≥ 阈值时可继续升阶。";
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"阶段数={gamePhases.Count}，当前阶段索引={_currentPhaseIndex}（0 起）。");
+            sb.AppendLine("各阶升阶（离开当前索引 → 下一索引）规范化门槛与滞回（norm = TotalPerformanceScore / 分母）：");
+            for (int i = 0; i < gamePhases.Count - 1; i++)
+            {
+                float t = GetPromotionThresholdForLeavingPhase(i);
+                sb.AppendLine(
+                    $"  索引 {i}→{i + 1}：norm ≥ {t:F3}（约原始分 ≥ {t * div:F1} / {div:F1}）；滞回需先低于 {t - hyst:F3} 再升破 {t:F3}。");
+            }
+
+            float defSat = bossIncomingConfig != null
+                ? bossIncomingConfig.defaultMinPerformanceScoreGainPerPhaseForSaturatedPromotion
+                : 0f;
+            sb.AppendLine(
+                $"若 norm 顶满且无法用滞回升阶：每阶需「进入该阶后原始分净增」≥ 该阶配置（0 则用 Boss 默认 {defSat:F1}）；且间隔 ≥{MinSecondsBetweenScorePhasePromotionsWhenSaturated:F2}s 才升一阶。Boss 默认填 0 则关闭饱和定时连升。");
+            phaseBlock = sb.ToString().TrimEnd();
+        }
+
+        float thr0 = gamePhases != null && gamePhases.Count > 1
+            ? GetPromotionThresholdForLeavingPhase(0)
+            : GetFallbackScorePhasePromotionThreshold();
+        float rawAtThr0 = thr0 * div;
 
         Debug.Log(
             "[GameManager/PhaseScore] ========== 开局：阶段进阶与分数 ==========\n" +
             phaseBlock + "\n" +
-            $"归一化：norm = Clamp01(0.5 + raw / (2×{half:F1}))；raw 为 TotalPerformanceScore（原始分）。\n" +
-            $"从 raw=0（norm=0.5）若只做加分、忽略衰减，约需净增 raw ≈ {rawDeltaFromNeutral:F1} 才能使「未截断前」的 norm 到达阈值 {thr:F3}（多物衰减时实际要更高）。\n" +
+            $"归一化：norm = Clamp01(TotalPerformanceScore / 分母)；分母={div:F1}，当前原始分={TotalPerformanceScore:F2}，norm={NormalizedPerformanceScore:F3}。\n" +
+            $"第 0 阶升阶阈值 norm≥{thr0:F3} 约等于原始分≥{rawAtThr0:F1}。\n" +
             $"当前计分开关 _normalPerformanceScoringActive = {_normalPerformanceScoringActive}" +
             (enableTutorial ? "（开教程时教程结束前为 false）" : "") + "\n" +
             "==========================================",
@@ -304,6 +344,8 @@ public class GameManager : MonoBehaviour
 
         UpdatePhaseAdvanceByScore();
 
+        TickBossWarningUiFreezeAndShake();
+
         int working = 0;
         int broken = 0;
         int baiting = 0;
@@ -316,26 +358,23 @@ public class GameManager : MonoBehaviour
             if (wi.IsBroken)
             {
                 broken++;
-                if (!_brokenWarnings.ContainsKey(wi))
+                if (!_itemBrokenWarningDelays.ContainsKey(wi))
                     StartBrokenWarningForItem(wi);
             }
             else
             {
-                if (_brokenWarnings.ContainsKey(wi))
+                if (_itemBrokenWarningDelays.ContainsKey(wi))
                     ClearBrokenWarningForItem(wi);
                 if (wi.IsBaiting) baiting++;
                 else working++;
             }
         }
 
-        if (work < maxWork)
-        {
-            work += working * workGainPerSecondPerWorkingItem * Time.deltaTime;
-            if (work > maxWork) work = maxWork;
-        }
+        work += broken * workLossPerSecondPerBrokenItem * Time.deltaTime;
 
-        work -= broken * workLossPerSecondPerBrokenItem * Time.deltaTime;
-        if (work < 0f) work = 0f;
+        work -= working * workGainPerSecondPerWorkingItem * Time.deltaTime;
+
+        work = Mathf.Clamp(work, 0f, maxWork);
 
         if (_normalPerformanceScoringActive)
         {
@@ -343,13 +382,11 @@ public class GameManager : MonoBehaviour
             _performanceScoreRaw -= broken * ps.scoreDecayPerSecond * Time.deltaTime;
         }
 
-        if (BossIsHere)
-        {
-            if (broken > 0)
-                GameOver("Boss saw hacked items!");
-            else if (work < bossMinWorkThreshold)
-                GameOver("Work is too low!");
-        }
+        if (BossIsHere && broken > 0)
+            GameOver("Boss saw hacked items!");
+
+        if (work >= maxWork)
+            GameOverWorkProgressFull();
 
         if (ui != null)
         {
@@ -384,7 +421,11 @@ public class GameManager : MonoBehaviour
         _tutorialCoroutine = null;
 
         if (gamePhases != null && gamePhases.Count > 0)
+        {
             _normalPerformanceScoringActive = true;
+            SyncPhasePromotionArmedToCurrentThreshold();
+            _timeSinceLastScorePhasePromotion = 0f;
+        }
     }
 
     IEnumerator BossLoop()
@@ -441,8 +482,8 @@ public class GameManager : MonoBehaviour
 
             BossWarning = true;
             BossWarningTimeLeft = warnDur;
+            OnBossWarningPhaseStarted();
             OnBossWarningStarted?.Invoke();
-            StartItGuyWarningIfEnabled();
 
             if (screenTint != null)
                 screenTint.SetTarget(1f, warnDur);
@@ -455,7 +496,7 @@ public class GameManager : MonoBehaviour
 
             BossWarning = false;
             BossWarningTimeLeft = 0f;
-            ClearItGuyWarning();
+            OnBossWarningPhaseEnded();
 
             if (isGameOver || IsVictory) yield break;
 
@@ -509,7 +550,7 @@ public class GameManager : MonoBehaviour
         if (_currentPhaseIndex >= gamePhases.Count - 1)
             return;
 
-        float thr = GetScorePhasePromotionThreshold();
+        float thr = GetPromotionThresholdForLeavingPhase(_currentPhaseIndex);
         float h = GetScorePhasePromotionHysteresis();
         float norm = NormalizedPerformanceScore;
 
@@ -522,7 +563,12 @@ public class GameManager : MonoBehaviour
         bool saturated = norm >= normSaturated;
 
         bool promoteByHysteresis = _phasePromotionArmed && norm >= thr;
+
+        float minPerfGainForSaturated = GetMinPerformanceScoreGainThisPhaseForSaturatedPromotion(_currentPhaseIndex);
+        float perfSinceEnteredPhase = TotalPerformanceScore - _performanceScoreRawWhenEnteredCurrentPhase;
         bool promoteBySaturatedInterval = saturated && norm >= thr
+            && minPerfGainForSaturated > 0.0001f
+            && perfSinceEnteredPhase >= minPerfGainForSaturated
             && _timeSinceLastScorePhasePromotion >= MinSecondsBetweenScorePhasePromotionsWhenSaturated;
 
         if (!promoteByHysteresis && !promoteBySaturatedInterval)
@@ -534,11 +580,68 @@ public class GameManager : MonoBehaviour
         _timeSinceLastScorePhasePromotion = 0f;
     }
 
-    float GetScorePhasePromotionThreshold()
+    /// <summary>离开 gamePhases[phaseIndex] 进入下一阶段所需的规范化分阈值。</summary>
+    float GetPromotionThresholdForLeavingPhase(int phaseIndex)
+    {
+        if (gamePhases == null || phaseIndex < 0 || phaseIndex >= gamePhases.Count)
+            return GetFallbackScorePhasePromotionThreshold();
+
+        GamePhaseConfig c = gamePhases[phaseIndex];
+        if (c == null)
+            return GetFallbackScorePhasePromotionThreshold();
+
+        if (c.normalizedScoreRequiredForNextPhase <= 0.0001f)
+            return GetFallbackScorePhasePromotionThreshold();
+
+        return Mathf.Clamp01(c.normalizedScoreRequiredForNextPhase);
+    }
+
+    float GetMinPerformanceScoreGainThisPhaseForSaturatedPromotion(int phaseIndex)
+    {
+        if (gamePhases == null || phaseIndex < 0 || phaseIndex >= gamePhases.Count)
+            return 0f;
+        GamePhaseConfig c = gamePhases[phaseIndex];
+        if (c == null)
+            return 0f;
+
+        float perPhase = Mathf.Max(0f, c.minPerformanceScoreGainThisPhaseForSaturatedPromotion);
+        if (perPhase > 0.0001f)
+            return perPhase;
+
+        if (bossIncomingConfig != null)
+            return Mathf.Max(0f, bossIncomingConfig.defaultMinPerformanceScoreGainPerPhaseForSaturatedPromotion);
+
+        return 0f;
+    }
+
+    float GetFallbackScorePhasePromotionThreshold()
     {
         if (bossIncomingConfig != null)
             return Mathf.Clamp01(bossIncomingConfig.scoreThresholdForNextPhase);
         return 0.55f;
+    }
+
+    /// <summary>
+    /// 滞回「武装」与当前阶阈值对齐：仅当 norm 低于（阈值−滞回）后才允许再次升破该阶阈值。
+    /// 避免开局 norm 与阈值关系异常时误升阶；教程结束开启计分时同步一次。
+    /// </summary>
+    void SyncPhasePromotionArmedToCurrentThreshold()
+    {
+        if (gamePhases == null || gamePhases.Count <= 1)
+        {
+            _phasePromotionArmed = false;
+            return;
+        }
+
+        if (_currentPhaseIndex >= gamePhases.Count - 1)
+        {
+            _phasePromotionArmed = false;
+            return;
+        }
+
+        float thr = GetPromotionThresholdForLeavingPhase(_currentPhaseIndex);
+        float h = GetScorePhasePromotionHysteresis();
+        _phasePromotionArmed = NormalizedPerformanceScore < thr - h;
     }
 
     float GetScorePhasePromotionHysteresis()
@@ -552,6 +655,8 @@ public class GameManager : MonoBehaviour
     {
         if (c == null) return;
 
+        _performanceScoreRawWhenEnteredCurrentPhase = _performanceScoreRaw;
+
         _activeMaxConcurrentBroken = Mathf.Max(1, c.maxConcurrentBrokenWorkItems);
         _activeBreakMin = c.minBreakIntervalSeconds;
         _activeBreakMax = Mathf.Max(c.minBreakIntervalSeconds, c.maxBreakIntervalSeconds);
@@ -560,13 +665,15 @@ public class GameManager : MonoBehaviour
         workUltraPunishment = c.workUltraPunishment;
         workGainPerSecondPerWorkingItem = c.workGainPerSecondPerWorkingItem;
         workLossPerSecondPerBrokenItem = c.workLossPerSecondPerBrokenItem;
+        float instB = Mathf.Max(0f, c.workPressureInstantOnBroke);
+        _activeWorkPressureInstantOnBroke = instB > 0.0001f ? instB : workPressureInstantOnBroke;
+        float instR = Mathf.Max(0f, c.workPressureInstantOnBrokeRepair);
+        _activeWorkPressureInstantOnBrokeRepair = instR > 0.0001f ? instR : workPressureInstantOnBrokeRepair;
         _activeWarningShowDelayAfterBreak = Mathf.Max(0f, c.warningShowDelayAfterBreak);
         _activeWarningMessageFormat = string.IsNullOrEmpty(c.warningMessageFormat)
             ? "{0} is broken!"
             : c.warningMessageFormat;
 
-        if (ui != null)
-            ui.SetWorkBossMinThresholdIndicator(bossMinWorkThreshold, maxWork);
     }
 
     /// <summary>为 true 时 WorkItem 自动故障间隔使用阶段配置，否则使用各 WorkItem 自身 Inspector 数值。</summary>
@@ -641,10 +748,10 @@ public class GameManager : MonoBehaviour
 
     float ComputeNormalizedPerformanceScore()
     {
-        float halfRange = 500f;
-        if (bossIncomingConfig != null && bossIncomingConfig.performanceNormalizedHalfRange > 0f)
-            halfRange = Mathf.Max(1f, bossIncomingConfig.performanceNormalizedHalfRange);
-        return Mathf.Clamp01(0.5f + _performanceScoreRaw / (2f * halfRange));
+        float div = bossIncomingConfig != null
+            ? Mathf.Max(1e-4f, bossIncomingConfig.performanceScoreNormalizationDivisor)
+            : 1000f;
+        return Mathf.Clamp01(TotalPerformanceScore / div);
     }
 
     public float GetActiveBreakIntervalMin() => _activeBreakMin;
@@ -682,25 +789,29 @@ public class GameManager : MonoBehaviour
         if (screenTint != null)
             screenTint.SetTarget(0f, 0.1f);
 
-        ClearItGuyWarning();
-        ClearAllBrokenWarnings();
+        ShutdownBrokenWarningSystem();
 
         if (ui != null)
+        {
+            ui.HideWorkProgressLose();
             ui.ShowGameWin(TotalPerformanceScore);
+        }
 
         Time.timeScale = 0f;
     }
 
     public void Punishment()
     {
-        work -= workPunishment;
+        work += workPunishment;
         ApplyWrongRepairPerformancePenalty(baitWrongHit: false);
+        ClampWorkProgressAndMaybeLose();
     }
 
     public void UltraPunishment()
     {
-        work -= workUltraPunishment;
+        work += workUltraPunishment;
         ApplyWrongRepairPerformancePenalty(baitWrongHit: true);
+        ClampWorkProgressAndMaybeLose();
     }
 
     void ApplyWrongRepairPerformancePenalty(bool baitWrongHit)
@@ -718,7 +829,67 @@ public class GameManager : MonoBehaviour
 
     public void Reward()
     {
-        work += workMashGain;
+        work -= workMashGain;
+        work = Mathf.Max(0f, work);
+    }
+
+    /// <summary>WorkItem 进入 Broke 时调用，瞬时增加压力条。</summary>
+    public void ApplyWorkPressureOnItemBroke()
+    {
+        if (isGameOver || IsVictory) return;
+        work += _activeWorkPressureInstantOnBroke;
+        ClampWorkProgressAndMaybeLose();
+    }
+
+    /// <summary>玩家修好 Broke 时由 WorkItem 调用，瞬时降低压力条。</summary>
+    public void ApplyWorkPressureOnBrokeRepaired()
+    {
+        if (isGameOver || IsVictory) return;
+        work -= _activeWorkPressureInstantOnBrokeRepair;
+        work = Mathf.Max(0f, work);
+    }
+
+    void ClampWorkProgressAndMaybeLose()
+    {
+        if (isGameOver || IsVictory) return;
+        work = Mathf.Clamp(work, 0f, maxWork);
+        if (work >= maxWork)
+            GameOverWorkProgressFull();
+    }
+
+    void GameOverWorkProgressFull()
+    {
+        if (isGameOver || IsVictory) return;
+        isGameOver = true;
+
+        if (_bossLoopCoroutine != null)
+        {
+            StopCoroutine(_bossLoopCoroutine);
+            _bossLoopCoroutine = null;
+        }
+
+        if (_tutorialCoroutine != null)
+        {
+            StopCoroutine(_tutorialCoroutine);
+            _tutorialCoroutine = null;
+        }
+
+        BossWarning = false;
+        BossIsHere = false;
+        FreezeFailures = false;
+
+        if (screenTint != null)
+            screenTint.SetTarget(0f, 0.1f);
+
+        ShutdownBrokenWarningSystem();
+
+        if (ui != null)
+        {
+            ui.HideGameOver();
+            ui.ShowWorkProgressLose(surviveTime, work, TotalPerformanceScore, maxWork);
+        }
+
+        Time.timeScale = 0f;
     }
 
     public void RegisterItem(WorkItem item)
@@ -744,317 +915,361 @@ public class GameManager : MonoBehaviour
 
     void StartBrokenWarningForItem(WorkItem item)
     {
-        if (item == null || warningEntryPrefab == null || warningSlotRects == null || warningSlotRects.Count == 0)
+        if (item == null || brokenWarningPanelRoot == null || brokenWarningText == null)
+            return;
+        if (_itemBrokenWarningDelays.ContainsKey(item))
             return;
 
-        var state = new BrokenWarningState();
-        _brokenWarnings[item] = state;
-        TryReserveFirstFreeWarningSlot(state);
-        state.DelayRoutine = StartCoroutine(BrokenWarningDelayRoutine(item, state));
+        Coroutine c = StartCoroutine(ItemBrokenWarningDelayRoutine(item));
+        _itemBrokenWarningDelays[item] = c;
     }
 
-    /// <summary>槽位是否被任意损坏提示或 Sam 提示占用（exceptBroken 为当前 Broken 状态时可忽略其自身预留）。</summary>
-    bool IsWarningSlotOccupied(RectTransform slot, BrokenWarningState exceptBroken = null)
-    {
-        foreach (KeyValuePair<WorkItem, BrokenWarningState> kv in _brokenWarnings)
-        {
-            BrokenWarningState st = kv.Value;
-            if (st == exceptBroken) continue;
-            if (st.ReservedSlot == slot) return true;
-            if (st.Instance != null && st.Instance.transform.parent == slot) return true;
-        }
-
-        if (_itGuyWarning != null)
-        {
-            if (_itGuyWarning.ReservedSlot == slot) return true;
-            if (_itGuyWarning.Instance != null && _itGuyWarning.Instance.transform.parent == slot) return true;
-        }
-
-        return false;
-    }
-
-    /// <summary>从列表头开始找第一个空闲槽并写入 state.ReservedSlot；已有预留则不再改。</summary>
-    bool TryReserveFirstFreeWarningSlot(BrokenWarningState state)
-    {
-        if (state == null || warningSlotRects == null || warningSlotRects.Count == 0)
-            return false;
-        if (state.ReservedSlot != null)
-            return true;
-
-        for (int i = 0; i < warningSlotRects.Count; i++)
-        {
-            RectTransform s = warningSlotRects[i];
-            if (s == null) continue;
-            if (IsWarningSlotOccupied(s, state))
-                continue;
-            state.ReservedSlot = s;
-            return true;
-        }
-
-        return false;
-    }
-
-    bool TryReserveFirstFreeItGuySlot(ItGuyWarningState state)
-    {
-        if (state == null || warningSlotRects == null || warningSlotRects.Count == 0)
-            return false;
-        if (state.ReservedSlot != null)
-            return true;
-
-        for (int i = 0; i < warningSlotRects.Count; i++)
-        {
-            RectTransform s = warningSlotRects[i];
-            if (s == null) continue;
-            if (IsWarningSlotOccupied(s, null))
-                continue;
-            state.ReservedSlot = s;
-            return true;
-        }
-
-        return false;
-    }
-
-    IEnumerator BrokenWarningDelayRoutine(WorkItem item, BrokenWarningState state)
+    IEnumerator ItemBrokenWarningDelayRoutine(WorkItem item)
     {
         float delay = Mathf.Max(0f, _activeWarningShowDelayAfterBreak);
         if (delay > 0f)
             yield return new WaitForSeconds(delay);
 
-        state.DelayRoutine = null;
+        _itemBrokenWarningDelays.Remove(item);
 
         if (item == null || !item.IsBroken)
+            yield break;
+
+        if (BossWarning)
         {
-            _brokenWarnings.Remove(item);
+            EnqueueBrokenWarningItem(item);
             yield break;
         }
 
-        while (state.ReservedSlot == null)
+        if (_displayedBrokenWarningItem != null)
         {
-            if (!TryReserveFirstFreeWarningSlot(state))
-                yield return null;
-        }
-
-        RectTransform slot = state.ReservedSlot;
-        if (warningEntryPrefab == null || slot == null)
-        {
-            _brokenWarnings.Remove(item);
+            EnqueueBrokenWarningItem(item);
             yield break;
         }
 
-        GameObject entry = Instantiate(warningEntryPrefab, slot);
-        state.Instance = entry;
+        ShowBrokenItemWarning(item, forceWarningIcon: _brokenWarningChainFresh);
+    }
 
-        RectTransform entryRt = entry.GetComponent<RectTransform>();
-        if (entryRt != null)
+    void EnqueueBrokenWarningItem(WorkItem item)
+    {
+        if (item == null || !item.IsBroken) return;
+        if (_brokenWarningReadyQueue.Contains(item)) return;
+        _brokenWarningReadyQueue.Add(item);
+    }
+
+    void RemoveBrokenWarningItemFromQueue(WorkItem item)
+    {
+        if (item == null) return;
+        _brokenWarningReadyQueue.Remove(item);
+    }
+
+    WorkItem PopNextBrokenWarningFromQueue()
+    {
+        while (_brokenWarningReadyQueue.Count > 0)
         {
-            Vector2 endPos = entryRt.anchoredPosition;
-            Vector2 startPos = endPos + warningSlideInFromOffset;
-            entryRt.anchoredPosition = startPos;
+            WorkItem w = _brokenWarningReadyQueue[0];
+            _brokenWarningReadyQueue.RemoveAt(0);
+            if (w != null && w.IsBroken)
+                return w;
+        }
 
-            TMP_Text tmp = entry.GetComponentInChildren<TMP_Text>(true);
-            if (tmp != null)
-            {
-                try
-                {
-                    tmp.text = string.Format(_activeWarningMessageFormat, WorkItemDisplayName(item));
-                }
-                catch (System.FormatException)
-                {
-                    tmp.text = $"{WorkItemDisplayName(item)} is broken!";
-                }
+        return null;
+    }
 
-                tmp.ForceMeshUpdate();
-            }
+    string FormatBrokenWarningTextForItem(WorkItem item)
+    {
+        string name = WorkItemDisplayName(item);
+        try
+        {
+            return string.Format(_activeWarningMessageFormat, name);
+        }
+        catch (System.FormatException)
+        {
+            return $"{name} is broken!";
+        }
+    }
 
-            float dur = warningSlideInDuration;
-            if (dur <= 0f)
-                entryRt.anchoredPosition = endPos;
-            else
-                state.SlideRoutine = StartCoroutine(SlideWarningEntryRoutine(entryRt, startPos, endPos, state));
+    void ShowBrokenItemWarning(WorkItem item, bool forceWarningIcon)
+    {
+        if (item == null || brokenWarningText == null || brokenWarningPanelRoot == null)
+            return;
+
+        _displayedBrokenWarningItem = item;
+        brokenWarningText.text = FormatBrokenWarningTextForItem(item);
+        brokenWarningText.ForceMeshUpdate();
+        brokenWarningPanelRoot.SetActive(true);
+
+        if (forceWarningIcon && brokenWarningIconImage != null && brokenWarningActiveSprite != null)
+            brokenWarningIconImage.sprite = brokenWarningActiveSprite;
+
+        if (forceWarningIcon)
+            _brokenWarningChainFresh = false;
+    }
+
+    void RestoreBrokenWarningIconDefault()
+    {
+        if (brokenWarningIconImage != null && _defaultBrokenWarningIconSprite != null)
+            brokenWarningIconImage.sprite = _defaultBrokenWarningIconSprite;
+    }
+
+    void HideBrokenWarningPanelFullyIdle()
+    {
+        if (brokenWarningPanelRoot != null)
+            brokenWarningPanelRoot.SetActive(false);
+        RestoreBrokenWarningIconDefault();
+        _brokenWarningChainFresh = true;
+    }
+
+    void HandleDisplayedBrokenWarningResolved()
+    {
+        _displayedBrokenWarningItem = null;
+
+        if (BossWarning)
+            return;
+
+        WorkItem next = PopNextBrokenWarningFromQueue();
+        if (next != null)
+        {
+            if (_brokenWarningInterPauseRoutine != null)
+                StopCoroutine(_brokenWarningInterPauseRoutine);
+            _brokenWarningInterPauseRoutine = StartCoroutine(InterBrokenWarningPauseThenShowNext(next));
         }
         else
         {
-            TMP_Text tmp = entry.GetComponentInChildren<TMP_Text>(true);
-            if (tmp != null)
-            {
-                try
-                {
-                    tmp.text = string.Format(_activeWarningMessageFormat, WorkItemDisplayName(item));
-                }
-                catch (System.FormatException)
-                {
-                    tmp.text = $"{WorkItemDisplayName(item)} is broken!";
-                }
-
-                tmp.ForceMeshUpdate();
-            }
+            HideBrokenWarningPanelFullyIdle();
         }
     }
 
-    IEnumerator SlideWarningEntryRoutine(RectTransform rt, Vector2 from, Vector2 to, BrokenWarningState state)
+    IEnumerator InterBrokenWarningPauseThenShowNext(WorkItem next)
     {
-        float dur = Mathf.Max(0.0001f, warningSlideInDuration);
-        bool useCurve = warningSlideInEase != null && warningSlideInEase.length > 0;
-        float t = 0f;
-        while (t < dur)
+        if (brokenWarningPanelRoot != null)
+            brokenWarningPanelRoot.SetActive(false);
+
+        float pause = Mathf.Max(0f, interBrokenWarningPauseSeconds);
+        if (pause > 0f)
+            yield return new WaitForSeconds(pause);
+
+        _brokenWarningInterPauseRoutine = null;
+
+        if (BossWarning)
         {
-            t += Time.deltaTime;
-            float u = Mathf.Clamp01(t / dur);
-            if (useCurve)
-                u = warningSlideInEase.Evaluate(u);
-            rt.anchoredPosition = Vector2.LerpUnclamped(from, to, u);
-            yield return null;
+            if (next != null && next.IsBroken)
+                EnqueueBrokenWarningItem(next);
+            yield break;
         }
 
-        rt.anchoredPosition = to;
-        state.SlideRoutine = null;
+        if (next == null || !next.IsBroken)
+        {
+            WorkItem alt = PopNextBrokenWarningFromQueue();
+            if (alt != null)
+                ShowBrokenItemWarning(alt, forceWarningIcon: false);
+            else
+                HideBrokenWarningPanelFullyIdle();
+            yield break;
+        }
+
+        ShowBrokenItemWarning(next, forceWarningIcon: false);
     }
 
-    void StartItGuyWarningIfEnabled()
+    void OnBossWarningPhaseStarted()
     {
+        _resumeBrokenWarningAfterBoss = _displayedBrokenWarningItem;
+        _displayedBrokenWarningItem = null;
+
         BossIncomingConfig cfg = bossIncomingConfig;
-        if (cfg == null || !cfg.enableITGuyWarning) return;
-        if (string.IsNullOrWhiteSpace(cfg.itGuyWarningMessage)) return;
-        if (warningEntryPrefab == null || warningSlotRects == null || warningSlotRects.Count == 0) return;
+        if (cfg != null && cfg.enableITGuyWarning && !string.IsNullOrWhiteSpace(cfg.itGuyWarningMessage))
+            _bossApproachWarningMessage = cfg.itGuyWarningMessage.Trim();
+        else
+            _bossApproachWarningMessage = "Boss approaching!";
 
-        ClearItGuyWarning();
-        _itGuyWarning = new ItGuyWarningState();
-        _itGuyWarning.DelayRoutine = StartCoroutine(ItGuyWarningDelayRoutine(cfg.itGuyWarningMessage.Trim(), _itGuyWarning));
+        _bossWarningUiInFreezeHide = false;
+        StopBossWarningShakeRoutine();
+        ResetBrokenWarningShakeLocalPosition();
+
+        if (brokenWarningText != null)
+        {
+            brokenWarningText.text = _bossApproachWarningMessage;
+            brokenWarningText.ForceMeshUpdate();
+        }
+
+        if (BlockNewHackEventsNow())
+            EnterBossWarningFreezeUiMode();
+        else
+        {
+            brokenWarningPanelRoot?.SetActive(true);
+            StartBossWarningShakeRoutineIfConfigured();
+        }
     }
 
-    IEnumerator ItGuyWarningDelayRoutine(string message, ItGuyWarningState state)
+    void TickBossWarningUiFreezeAndShake()
     {
-        float delay = Mathf.Max(0f, _activeWarningShowDelayAfterBreak);
-        if (delay > 0f)
-            yield return new WaitForSeconds(delay);
-
-        state.DelayRoutine = null;
-
-        while (state.ReservedSlot == null)
+        if (!BossWarning)
         {
-            if (!TryReserveFirstFreeItGuySlot(state))
-                yield return null;
+            if (_bossWarningUiInFreezeHide)
+                _bossWarningUiInFreezeHide = false;
+            return;
         }
 
-        RectTransform slot = state.ReservedSlot;
-        if (warningEntryPrefab == null || slot == null)
+        bool freeze = BlockNewHackEventsNow();
+        if (freeze)
         {
-            ClearItGuyWarning();
-            yield break;
-        }
-
-        GameObject entry = Instantiate(warningEntryPrefab, slot);
-        state.Instance = entry;
-
-        RectTransform entryRt = entry.GetComponent<RectTransform>();
-        if (entryRt != null)
-        {
-            Vector2 endPos = entryRt.anchoredPosition;
-            Vector2 startPos = endPos + warningSlideInFromOffset;
-            entryRt.anchoredPosition = startPos;
-
-            TMP_Text tmp = entry.GetComponentInChildren<TMP_Text>(true);
-            if (tmp != null)
-            {
-                tmp.text = message;
-                tmp.ForceMeshUpdate();
-            }
-
-            float dur = warningSlideInDuration;
-            if (dur <= 0f)
-                entryRt.anchoredPosition = endPos;
-            else
-                state.SlideRoutine = StartCoroutine(SlideItGuyWarningEntryRoutine(entryRt, startPos, endPos, state));
+            if (!_bossWarningUiInFreezeHide)
+                EnterBossWarningFreezeUiMode();
         }
         else
         {
-            TMP_Text tmp = entry.GetComponentInChildren<TMP_Text>(true);
-            if (tmp != null)
+            if (_bossWarningUiInFreezeHide)
+                ExitBossWarningFreezeUiMode();
+        }
+    }
+
+    void EnterBossWarningFreezeUiMode()
+    {
+        _bossWarningUiInFreezeHide = true;
+        StopBossWarningShakeRoutine();
+        ResetBrokenWarningShakeLocalPosition();
+        brokenWarningPanelRoot?.SetActive(false);
+        RestoreBrokenWarningIconDefault();
+    }
+
+    void ExitBossWarningFreezeUiMode()
+    {
+        _bossWarningUiInFreezeHide = false;
+        if (brokenWarningText != null && _bossApproachWarningMessage != null)
+        {
+            brokenWarningText.text = _bossApproachWarningMessage;
+            brokenWarningText.ForceMeshUpdate();
+        }
+
+        brokenWarningPanelRoot?.SetActive(true);
+    }
+
+    void OnBossWarningPhaseEnded()
+    {
+        StopBossWarningShakeRoutine();
+        ResetBrokenWarningShakeLocalPosition();
+        _bossWarningUiInFreezeHide = false;
+
+        if (_resumeBrokenWarningAfterBoss != null && _resumeBrokenWarningAfterBoss.IsBroken)
+        {
+            ShowBrokenItemWarning(_resumeBrokenWarningAfterBoss, forceWarningIcon: true);
+            _resumeBrokenWarningAfterBoss = null;
+        }
+        else
+        {
+            _resumeBrokenWarningAfterBoss = null;
+            WorkItem next = PopNextBrokenWarningFromQueue();
+            if (next != null)
             {
-                tmp.text = message;
-                tmp.ForceMeshUpdate();
+                _brokenWarningChainFresh = true;
+                ShowBrokenItemWarning(next, forceWarningIcon: true);
+            }
+            else
+            {
+                HideBrokenWarningPanelFullyIdle();
             }
         }
     }
 
-    IEnumerator SlideItGuyWarningEntryRoutine(RectTransform rt, Vector2 from, Vector2 to, ItGuyWarningState state)
+    void StartBossWarningShakeRoutineIfConfigured()
     {
-        float dur = Mathf.Max(0.0001f, warningSlideInDuration);
-        bool useCurve = warningSlideInEase != null && warningSlideInEase.length > 0;
-        float t = 0f;
-        while (t < dur)
+        if (brokenWarningShakeTarget == null) return;
+        if (_bossWarningShakeRoutine != null) return;
+        _bossWarningShakeRoutine = StartCoroutine(BossWarningShakeRoutine());
+    }
+
+    void StopBossWarningShakeRoutine()
+    {
+        if (_bossWarningShakeRoutine != null)
         {
-            t += Time.deltaTime;
-            float u = Mathf.Clamp01(t / dur);
-            if (useCurve)
-                u = warningSlideInEase.Evaluate(u);
-            rt.anchoredPosition = Vector2.LerpUnclamped(from, to, u);
+            StopCoroutine(_bossWarningShakeRoutine);
+            _bossWarningShakeRoutine = null;
+        }
+
+        ResetBrokenWarningShakeLocalPosition();
+    }
+
+    void ResetBrokenWarningShakeLocalPosition()
+    {
+        if (brokenWarningShakeTarget != null)
+            brokenWarningShakeTarget.localPosition = _brokenWarningShakeBaseLocalPos;
+    }
+
+    IEnumerator BossWarningShakeRoutine()
+    {
+        RectTransform rt = brokenWarningShakeTarget;
+        if (rt == null)
+        {
+            _bossWarningShakeRoutine = null;
+            yield break;
+        }
+
+        float amp = Mathf.Max(0f, brokenWarningBossShakeAmplitude);
+        float freq = Mathf.Max(0.01f, brokenWarningBossShakeFrequency);
+        Vector3 basePos = _brokenWarningShakeBaseLocalPos;
+
+        while (BossWarning && !BlockNewHackEventsNow() && !isGameOver && !IsVictory)
+        {
+            float t = Time.unscaledTime * freq;
+            rt.localPosition = basePos + new Vector3(
+                Mathf.Sin(t) * amp,
+                Mathf.Sin(t * 1.71f) * amp * 0.55f,
+                0f);
             yield return null;
         }
 
-        rt.anchoredPosition = to;
-        state.SlideRoutine = null;
+        rt.localPosition = basePos;
+        _bossWarningShakeRoutine = null;
     }
 
-    void ClearItGuyWarning()
+    void ShutdownBrokenWarningSystem()
     {
-        if (_itGuyWarning == null) return;
-
-        if (_itGuyWarning.DelayRoutine != null)
+        StopBossWarningShakeRoutine();
+        if (_brokenWarningInterPauseRoutine != null)
         {
-            StopCoroutine(_itGuyWarning.DelayRoutine);
-            _itGuyWarning.DelayRoutine = null;
+            StopCoroutine(_brokenWarningInterPauseRoutine);
+            _brokenWarningInterPauseRoutine = null;
         }
 
-        if (_itGuyWarning.SlideRoutine != null)
+        foreach (KeyValuePair<WorkItem, Coroutine> kv in _itemBrokenWarningDelays)
         {
-            StopCoroutine(_itGuyWarning.SlideRoutine);
-            _itGuyWarning.SlideRoutine = null;
+            if (kv.Value != null)
+                StopCoroutine(kv.Value);
         }
 
-        if (_itGuyWarning.Instance != null)
-        {
-            Destroy(_itGuyWarning.Instance);
-            _itGuyWarning.Instance = null;
-        }
+        _itemBrokenWarningDelays.Clear();
+        _brokenWarningReadyQueue.Clear();
+        _displayedBrokenWarningItem = null;
+        _resumeBrokenWarningAfterBoss = null;
+        _bossWarningUiInFreezeHide = false;
+        _bossApproachWarningMessage = null;
 
-        _itGuyWarning.ReservedSlot = null;
-        _itGuyWarning = null;
+        if (brokenWarningPanelRoot != null)
+            brokenWarningPanelRoot.SetActive(false);
+        RestoreBrokenWarningIconDefault();
+        ResetBrokenWarningShakeLocalPosition();
+        _brokenWarningChainFresh = true;
     }
 
     void ClearBrokenWarningForItem(WorkItem item)
     {
-        if (item == null || !_brokenWarnings.TryGetValue(item, out BrokenWarningState state))
+        if (item == null)
             return;
 
-        if (state.DelayRoutine != null)
+        if (_itemBrokenWarningDelays.TryGetValue(item, out Coroutine delayC))
         {
-            StopCoroutine(state.DelayRoutine);
-            state.DelayRoutine = null;
+            if (delayC != null)
+                StopCoroutine(delayC);
+            _itemBrokenWarningDelays.Remove(item);
         }
 
-        if (state.SlideRoutine != null)
-        {
-            StopCoroutine(state.SlideRoutine);
-            state.SlideRoutine = null;
-        }
+        RemoveBrokenWarningItemFromQueue(item);
 
-        if (state.Instance != null)
-        {
-            Destroy(state.Instance);
-            state.Instance = null;
-        }
+        if (_resumeBrokenWarningAfterBoss == item)
+            _resumeBrokenWarningAfterBoss = null;
 
-        state.ReservedSlot = null;
-        _brokenWarnings.Remove(item);
-    }
-
-    void ClearAllBrokenWarnings()
-    {
-        if (_brokenWarnings.Count == 0) return;
-        var keys = new List<WorkItem>(_brokenWarnings.Keys);
-        for (int i = 0; i < keys.Count; i++)
-            ClearBrokenWarningForItem(keys[i]);
+        if (_displayedBrokenWarningItem == item)
+            HandleDisplayedBrokenWarningResolved();
     }
 
     public void GameOver(string reason)
@@ -1078,18 +1293,20 @@ public class GameManager : MonoBehaviour
 
         FreezeFailures = false;
 
-        bool bossCaused = reason != null && (reason.Contains("Boss") || reason.Contains("Work is too low"));
+        bool bossCaused = reason != null && reason.Contains("Boss");
         if (bossCaused)
             OnGameOverBossCaused?.Invoke();
 
         if (screenTint != null)
             screenTint.SetTarget(0f, 0.1f);
 
-        ClearItGuyWarning();
-        ClearAllBrokenWarnings();
+        ShutdownBrokenWarningSystem();
 
         if (ui != null)
+        {
+            ui.HideWorkProgressLose();
             ui.ShowGameOver(surviveTime, work, reason, TotalPerformanceScore);
+        }
 
         Time.timeScale = 0f;
     }

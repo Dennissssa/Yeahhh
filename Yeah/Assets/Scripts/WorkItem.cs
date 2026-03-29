@@ -407,7 +407,10 @@ public class WorkItem : MonoBehaviour
         IsBroken = true;
 
         if (GameManager.Instance != null)
+        {
             GameManager.Instance.OnWorkItemEnteredHackedState(this);
+            GameManager.Instance.ApplyWorkPressureOnItemBroke();
+        }
 
         WarnIfTintDidNotApply(ApplyTintOverride(brokenColor), "Broke");
         OnBroken?.Invoke();
@@ -449,8 +452,12 @@ public class WorkItem : MonoBehaviour
     {
         // 仅当当前处于 Broke 或 Bait 时才执行修好逻辑并触发 OnFixed；正常状态下按键不触发
         if (!IsBroken && !IsBaiting) return;
+        bool wasBroken = IsBroken;
         IsBroken = false;
         IsBaiting = false;
+
+        if (wasBroken && GameManager.Instance != null)
+            GameManager.Instance.ApplyWorkPressureOnBrokeRepaired();
 
         ClearTintOverride();
         OnFixed?.Invoke();

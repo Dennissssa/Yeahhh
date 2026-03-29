@@ -21,6 +21,11 @@ public class UIManager : MonoBehaviour
     public TMP_Text gameOverTitleText;
     public TMP_Text gameOverDetailText;
 
+    [Header("Work ??????? UI")]
+    public GameObject workProgressLoseRoot;
+    public TMP_Text workProgressLoseTitleText;
+    public TMP_Text workProgressLoseDetailText;
+
     [Header("Victory UI")]
     public GameObject gameWinRoot;
     public TMP_Text gameWinPerformanceText;
@@ -45,7 +50,7 @@ public class UIManager : MonoBehaviour
 
     /// <summary>
     /// ???????? Boss ??? Work ????? Slider ?????????????0~maxWork ???? Fill Area ??????????????
-    /// ???????????? Slider ?? Fill Area???? Fill ???????¬®¬∫???????????????
+    /// ???????????? Slider ?? Fill Area???? Fill ???????ùù???????????????
     /// </summary>
     public void SetWorkBossMinThresholdIndicator(float bossMinWorkThreshold, float maxWork)
     {
@@ -90,6 +95,27 @@ public class UIManager : MonoBehaviour
     public void HideGameOver()
     {
         if (gameOverRoot != null) gameOverRoot.SetActive(false);
+    }
+
+    public void ShowWorkProgressLose(float surviveTime, float finalWorkProgress, float performanceScore, float maxWorkProgress)
+    {
+        if (workProgressLoseRoot != null) workProgressLoseRoot.SetActive(true);
+        if (workProgressLoseTitleText != null)
+            workProgressLoseTitleText.text = "??";
+
+        if (workProgressLoseDetailText != null)
+        {
+            workProgressLoseDetailText.text =
+                $"????????\n" +
+                $"??: {surviveTime:0.0}s\n" +
+                $"????: {finalWorkProgress:0}/{maxWorkProgress:0}\n" +
+                $"???: {performanceScore:0}";
+        }
+    }
+
+    public void HideWorkProgressLose()
+    {
+        if (workProgressLoseRoot != null) workProgressLoseRoot.SetActive(false);
     }
 
     public void ShowGameWin(float performanceScore)

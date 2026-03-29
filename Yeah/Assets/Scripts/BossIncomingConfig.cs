@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// Boss 来袭与表现分相关参数，集中在一个组件上便于在 Inspector 中配置。
@@ -33,11 +34,11 @@ public class BossIncomingConfig : MonoBehaviour
     [Min(0f)]
     public float randomTriggerMaxTime = 25f;
 
-    [Tooltip("启用后：规范化表现分低于阈值时立即触发 Boss（与随机计时并行，先发生者生效）")]
+    [Tooltip("启用后：当规范化表现分（TotalPerformanceScore/分母）低于阈值时立即触发 Boss（与随机计时并行，先发生者生效）")]
     public bool enableScoreForceTrigger;
 
     [Range(0f, 1f)]
-    [Tooltip("规范化表现分低于该值时强触 Boss（0~1）")]
+    [Tooltip("规范化表现分低于该值（0~1，即表现分/分母）时强触 Boss")]
     public float scoreTriggerThreshold = 0.35f;
 
     [Tooltip("单次 Boss 预警最短等待（秒）")]
@@ -87,18 +88,25 @@ public class BossIncomingConfig : MonoBehaviour
         new PhaseScoreSettings { baseScore = 60f, scoreDecayPerSecond = 12f, performancePenaltyIdleWrongHit = 25f, performancePenaltyBaitWrongHit = 50f },
     };
 
-    [Tooltip("原始分映射到 0~1：normalized = Clamp01(0.5 + raw / (2×此值))，用于分数强触与阶段门槛")]
-    [Min(1f)]
-    public float performanceNormalizedHalfRange = 500f;
+    [Min(1e-4f)]
+    [FormerlySerializedAs("performanceNormalizedHalfRange")]
+    [Tooltip("表现分「总分母」：规范化 norm = Clamp01(TotalPerformanceScore / 此值)。阶段进阶与 Boss 强触阈值均为 0~1 的相对比例。")]
+    public float performanceScoreNormalizationDivisor = 1000f;
 
     [Header("── Phase Difficulty ──")]
     [Range(0f, 1f)]
-    [Tooltip("规范化表现分达到该值时自动进入下一阶段（与 Boss 无关）；需先低于「阈值−滞回」后再次升破阈值才会再次升阶")]
+    [Tooltip("各阶段升阶阈值优先使用 GamePhaseConfig；此项为表现分/分母 的比例后备（对应阶段填 0 时用）")]
     public float scoreThresholdForNextPhase = 0.55f;
 
     [Range(0.01f, 0.25f)]
-    [Tooltip("防止分数在阈值附近抖动导致连续升阶；分数低于 (阈值−滞回) 后才会重新允许升阶")]
+    [Tooltip("每一阶单独计算滞回：分数需先低于「该阶阈值−滞回」后再次升破该阶阈值才会从该阶升出（防阈值抖动）")]
     public float scorePhasePromotionHysteresis = 0.03f;
+
+    [Min(0f)]
+    [FormerlySerializedAs("defaultMinWorkGainPerPhaseForSaturatedPromotion")]
+    [Tooltip(
+        "当 GamePhase 的 minPerformanceScoreGainThisPhaseForSaturatedPromotion 为 0 时，用此值：进入当前阶段后 TotalPerformanceScore 至少再净增这么多，才允许在 norm 顶满时按时间间隔升阶。设为 0 则关闭全局饱和定时升阶。")]
+    public float defaultMinPerformanceScoreGainPerPhaseForSaturatedPromotion = 10f;
 
     /// <summary>随机区间无效时回退为 max(min, 0)。</summary>
     public void SanitizeRandomTriggerRange()
